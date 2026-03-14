@@ -225,7 +225,19 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_auditoria',
         ]);
 
-        echo "✓ 4 roles creados: admin, vendedor, almacenero, supervisor\n";
+        // 5. Cobrador — gestiona cobros de créditos
+        $cobrador = Role::firstOrCreate(['name' => 'cobrador']);
+        $cobrador->syncPermissions([
+            'ver_clientes',
+            'editar_clientes',
+            'ver_ventas',
+            'ver_cajas',
+            'ver_comprobantes',
+            'imprimir_comprobantes',
+            'ver_dashboard',
+        ]);
+
+        echo "✓ 5 roles creados: admin, vendedor, almacenero, supervisor, cobrador\n";
         echo '✓ '.Permission::count()." permisos creados\n";
     }
 }

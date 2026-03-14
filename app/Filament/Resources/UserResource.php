@@ -64,20 +64,29 @@ class UserResource extends Resource
                     ]),
 
                 Forms\Components\Section::make('Rol del usuario')
-                    ->description('Seleccione el rol principal. Los permisos se asignan automaticamente segun el rol.')
+                    ->description('Seleccione el rol principal. Los permisos se asignan automáticamente según el rol definido en el seeder.')
                     ->schema([
-                        Forms\Components\Select::make('roles')
+                        Forms\Components\Select::make('role')
                             ->label('Rol')
-                            ->relationship('roles', 'name')
-                            ->options([
-                                'admin' => 'Admin — Acceso total al sistema',
-                                'supervisor' => 'Supervisor — Supervisa sin acceso admin',
-                                'vendedor' => 'Vendedor — Opera ventas y caja',
-                                'almacenero' => 'Almacenero — Gestiona stock y ubicaciones',
-                            ])
+                            ->options(
+                                \Spatie\Permission\Models\Role::pluck('name', 'name')
+                                    ->mapWithKeys(fn ($name) => [$name => match ($name) {
+                                        'admin' => 'Admin — Acceso total al sistema',
+                                        'supervisor' => 'Supervisor — Supervisa sin acceso admin',
+                                        'vendedor' => 'Vendedor — Opera ventas y caja',
+                                        'almacenero' => 'Almacenero — Gestiona stock y ubicaciones',
+                                        'cobrador' => 'Cobrador — Gestiona cobros de créditos',
+                                        default => ucfirst($name),
+                                    }])
+                            )
                             ->required()
-                            ->preload()
-                            ->native(false),
+                            ->native(false)
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record) {
+                                    $component->state($record->getRoleNames()->first());
+                                }
+                            })
+                            ->dehydrated(false),
                     ]),
 
                 Forms\Components\Section::make('Permisos adicionales')

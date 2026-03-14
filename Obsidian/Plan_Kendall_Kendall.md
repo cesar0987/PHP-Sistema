@@ -12,9 +12,9 @@
 |---|---|---|---|
 | **F1** | Controles internos | Policies, autenticación, autorización | ✅ Completada |
 | **F2** | Validación de datos | Form Requests, reglas de negocio | ✅ Completada |
-| **F3** | Testing y calidad | Tests unitarios y de feature | ✅ Completada |
+| **F3** | Testing y calidad | Tests unitarios y de feature | ⬜ En proceso |
 | **F4** | Documentación técnica | DER, DFDs, diccionario de datos, arquitectura | ✅ Completada |
-| **F5** | Documentación operativa | Manuales de usuario, runbook, changelog | F1 (roles definidos) |
+| **F5** | Documentación operativa | Manuales de usuario, runbook, changelog | ✅ Completada |
 | **F6** | Producción y continuidad | Backups, migración BD, deploy, capacitación | F1-F5 |
 
 ---
@@ -74,17 +74,17 @@
 - [x] `StoreCashRegisterRequest` — monto apertura ≥ 0
 
 ### 2.2 Validación de razonabilidad (reglas de negocio)
-- [ ] Precio de venta no puede ser menor al costo (advertencia)
-- [ ] Cantidad en venta no puede exceder stock disponible
-- [ ] No se puede cerrar caja si hay ventas pendientes
-- [ ] No se puede eliminar un producto con stock > 0
-- [ ] Fecha de compra no puede ser futura
-- [ ] Monto de cierre de caja con diferencia > 10% genera alerta
+- [x] Precio de venta no puede ser menor al costo (advertencia)
+- [x] Cantidad en venta no puede exceder stock disponible
+- [x] No se puede cerrar caja si hay ventas pendientes
+- [x] No se puede eliminar un producto con stock > 0
+- [x] Fecha de compra no puede ser futura
+- [x] Monto de cierre de caja con diferencia > 10% genera alerta
 
 ### 2.3 Validación en Filament (complementar)
-- [ ] Agregar `->rules()` con las mismas reglas del Form Request
-- [ ] Agregar `->helperText()` explicativo en campos complejos
-- [ ] Agregar `->hint()` con información contextual
+- [x] Agregar `->rules()` con las mismas reglas del Form Request
+- [x] Agregar `->helperText()` explicativo en campos complejos
+- [x] Agregar `->hint()` con información contextual
 
 ### Entregable F2
 ✅ Toda entrada validada tanto en UI (Filament) como en backend (Form Request)
@@ -155,8 +155,8 @@
 > **Objetivo K&K Cap. 16:** "La documentación permite operar y mantener el sistema sin dependencia del desarrollador"
 
 ### 5.1 Manual del Cajero
-- [ ] Crear `docs/Manual_Cajero.md`
-- [ ] Contenido:
+- [x] Crear `docs/Manual_Cajero.md`
+- [x] Contenido:
   - Cómo iniciar sesión
   - Cómo abrir caja (monto de apertura)
   - Buscar productos (barcode, nombre, SKU)
@@ -168,8 +168,8 @@
   - Errores comunes y qué hacer
 
 ### 5.2 Manual del Administrador
-- [ ] Crear `docs/Manual_Administrador.md`
-- [ ] Contenido:
+- [x] Crear `docs/Manual_Administrador.md`
+- [x] Contenido:
   - Gestión de productos y categorías
   - Gestión de proveedores y clientes
   - Sistema de ubicaciones (pasillos, estantes)
@@ -181,8 +181,8 @@
   - Revisar el log de actividad
 
 ### 5.3 Runbook de operaciones
-- [ ] Crear `docs/Runbook.md`
-- [ ] Contenido:
+- [x] Crear `docs/Runbook.md`
+- [x] Contenido:
   - Qué hacer si el sistema no carga
   - Cómo restaurar un backup
   - Cómo resetear contraseña de admin
@@ -190,9 +190,9 @@
   - Contactos de soporte
 
 ### 5.4 Changelog
-- [ ] Crear `CHANGELOG.md` en raíz del proyecto
-- [ ] Documentar versiones: v1.0 (base), v1.1 (auditoría), v1.2 (comprobantes), etc.
-- [ ] Formato: Added / Changed / Fixed / Removed
+- [x] Crear `CHANGELOG.md` en raíz del proyecto
+- [x] Documentar versiones: v1.0 (base), v1.1 (auditoría), v1.2 (comprobantes), etc.
+- [x] Formato: Added / Changed / Fixed / Removed
 
 ### Entregable F5
 ✅ Manual de cajero, manual de admin, runbook, changelog

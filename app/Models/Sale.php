@@ -52,6 +52,7 @@ class Sale extends Model
         'sale_date',
         'notes',
         'cancellation_reason',
+        'credit_due_date',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -71,6 +72,7 @@ class Sale extends Model
             'tax' => 'decimal:2',
             'total' => 'decimal:2',
             'sale_date' => 'datetime',
+            'credit_due_date' => 'date',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

@@ -14,6 +14,11 @@ class BranchScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
+        // Avoid infinite recursion if the model being queried is User
+        if ($model instanceof \App\Models\User) {
+            return;
+        }
+
         if (Auth::check() && !Auth::user()->hasRole('admin')) {
             $branchId = Auth::user()->branch_id;
             
@@ -23,11 +28,9 @@ class BranchScope implements Scope
                 
                 // If the model itself is Branch, we filter by its ID, otherwise by its branch_id
                 if ($table === 'branches') {
-                    /** @phpstan-ignore argument.type */
-                    $builder->where(["{$table}.id" => $branchId]);
+                    $builder->where("{$table}.id", $branchId);
                 } else {
-                    /** @phpstan-ignore argument.type */
-                    $builder->where(["{$table}.branch_id" => $branchId]);
+                    $builder->where("{$table}.branch_id", $branchId);
                 }
             }
         }

@@ -23,6 +23,7 @@ class Customer extends Model
         'current_balance',
         'is_credit_enabled',
         'credit_limit',
+        'credit_due_date',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -40,6 +41,7 @@ class Customer extends Model
             'active' => 'boolean',
             'is_credit_enabled' => 'boolean',
             'credit_limit' => 'decimal:2',
+            'credit_due_date' => 'date',
         ];
     }
 

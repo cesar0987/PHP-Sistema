@@ -46,6 +46,10 @@ class CustomerResource extends Resource
                 ->numeric()
                 ->prefix('Gs')
                 ->hidden(fn (Forms\Get $get) => ! $get('is_credit_enabled')),
+            Forms\Components\DatePicker::make('credit_due_date')
+                ->label('Fecha de Vencimiento de Pago')
+                ->helperText('Plazo máximo para que el cliente pague su saldo pendiente.')
+                ->hidden(fn (Forms\Get $get) => ! $get('is_credit_enabled')),
         ]);
     }
 

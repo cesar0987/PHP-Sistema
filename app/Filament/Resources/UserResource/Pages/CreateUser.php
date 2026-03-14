@@ -11,7 +11,18 @@ class CreateUser extends CreateRecord
 
     protected function afterCreate(): void
     {
+        $this->syncRole();
         $this->syncDirectPermissions();
+    }
+
+    protected function syncRole(): void
+    {
+        $user = $this->record;
+        $roleName = $this->data['role'] ?? null;
+
+        if ($roleName) {
+            $user->syncRoles([$roleName]);
+        }
     }
 
     protected function syncDirectPermissions(): void
