@@ -216,6 +216,13 @@ class ProductResource extends Resource
             ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\ProductResource\RelationManagers\StockMovementsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [

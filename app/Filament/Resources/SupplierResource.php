@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SupplierResource\Pages\CreateSupplier;
 use App\Filament\Resources\SupplierResource\Pages\EditSupplier;
 use App\Filament\Resources\SupplierResource\Pages\ListSuppliers;
+use App\Filament\Resources\SupplierResource\Pages\ViewSupplier;
 use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -53,6 +54,7 @@ class SupplierResource extends Resource
                 Tables\Filters\TrashedFilter::make()->label('Eliminados'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
@@ -73,11 +75,19 @@ class SupplierResource extends Resource
             ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\SupplierResource\RelationManagers\PurchasesRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListSuppliers::route('/'),
             'create' => CreateSupplier::route('/create'),
+            'view' => ViewSupplier::route('/{record}'),
             'edit' => EditSupplier::route('/{record}/edit'),
         ];
     }

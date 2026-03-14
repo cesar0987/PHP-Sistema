@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource;
 use App\Models\Sale;
 use App\Services\InventoryService;
+use App\Services\CreditService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Log;
 
@@ -65,6 +66,13 @@ class CreateSale extends CreateRecord
                 // Log the error but don't block the sale creation
                 Log::warning("Stock insuficiente para variante {$item->product_variant_id}: {$e->getMessage()}");
             }
+        }
+
+        // Record initial payment if applied
+        $amountPaid = (float) ($this->data['amount_paid'] ?? 0);
+        if ($sale->customer_id) {
+            $creditService = app(CreditService::class);
+            $creditService->recordSalePayment($sale, $amountPaid);
         }
     }
 

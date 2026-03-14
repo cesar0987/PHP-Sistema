@@ -40,6 +40,7 @@ class Sale extends Model
         'tax',
         'total',
         'status',
+        'payment_method',
         'invoice_number',
         'timbrado',
         'cdc',

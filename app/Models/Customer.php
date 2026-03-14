@@ -20,12 +20,15 @@ class Customer extends Model
         'email',
         'address',
         'active',
+        'current_balance',
+        'is_credit_enabled',
+        'credit_limit',
     ];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'document', 'phone', 'email', 'active'])
+            ->logOnly(['name', 'document', 'phone', 'email', 'active', 'is_credit_enabled', 'credit_limit'])
             ->logOnlyDirty()
             ->useLogName('cliente')
             ->setDescriptionForEvent(fn (string $eventName) => "Cliente '{$this->name}' fue {$eventName}");
@@ -35,11 +38,18 @@ class Customer extends Model
     {
         return [
             'active' => 'boolean',
+            'is_credit_enabled' => 'boolean',
+            'credit_limit' => 'decimal:2',
         ];
     }
 
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class);
     }
 }

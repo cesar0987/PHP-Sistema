@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CustomerResource\Pages\CreateCustomer;
 use App\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use App\Filament\Resources\CustomerResource\Pages\ListCustomers;
+use App\Filament\Resources\CustomerResource\Pages\ViewCustomer;
 use App\Models\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\CustomerResource\RelationManagers\PaymentsRelationManager;
 
 class CustomerResource extends Resource
 {
@@ -35,6 +37,15 @@ class CustomerResource extends Resource
             Forms\Components\TextInput::make('email')->label('Correo')->email()->maxLength(255),
             Forms\Components\Textarea::make('address')->label('Direccion'),
             Forms\Components\Toggle::make('active')->label('Activo')->default(true),
+            Forms\Components\Toggle::make('is_credit_enabled')
+                ->label('Habilitado para Crédito')
+                ->default(false)
+                ->live(),
+            Forms\Components\TextInput::make('credit_limit')
+                ->label('Límite de Crédito')
+                ->numeric()
+                ->prefix('Gs')
+                ->hidden(fn (Forms\Get $get) => ! $get('is_credit_enabled')),
         ]);
     }
 
@@ -46,13 +57,25 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('document')->label('RUC / CI')->searchable(),
                 Tables\Columns\TextColumn::make('phone')->label('Telefono')->searchable(),
                 Tables\Columns\TextColumn::make('email')->label('Correo')->searchable(),
+                Tables\Columns\TextColumn::make('current_balance')
+                    ->label('Saldo Adeudado')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.') . ' Gs')
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('active')->label('Activo')->boolean(),
+                Tables\Columns\IconColumn::make('is_credit_enabled')
+                    ->label('Crédito')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle'),
             ])
+            ->recordUrl(fn (Customer $record): string => CustomerResource::getUrl('view', ['record' => $record]))
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Solo activos')->query(fn ($query) => $query->where('active', true)),
                 Tables\Filters\TrashedFilter::make()->label('Eliminados'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
@@ -63,6 +86,13 @@ class CustomerResource extends Resource
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PaymentsRelationManager::class,
+        ];
     }
 
     public static function getEloquentQuery(): Builder
@@ -78,6 +108,7 @@ class CustomerResource extends Resource
         return [
             'index' => ListCustomers::route('/'),
             'create' => CreateCustomer::route('/create'),
+            'view' => ViewCustomer::route('/{record}'),
             'edit' => EditCustomer::route('/{record}/edit'),
         ];
     }

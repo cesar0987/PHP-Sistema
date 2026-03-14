@@ -56,4 +56,9 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(StockMovement::class, ProductVariant::class);
+    }
 }

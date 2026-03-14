@@ -84,8 +84,8 @@ class SaleResource extends Resource
                                     ])
                                     ->default('completed')
                                     ->required(),
-                                Forms\Components\Select::make('condition')
-                                    ->label('Condición')
+                                Forms\Components\Select::make('payment_method')
+                                    ->label('Método de Pago')
                                     ->options([
                                         'contado' => 'Contado',
                                         'credito' => 'Crédito',
@@ -471,7 +471,7 @@ class SaleResource extends Resource
                     ->label('Nro.')
                     ->searchable()
                     ->placeholder('-'),
-                Tables\Columns\TextColumn::make('condition')
+                Tables\Columns\TextColumn::make('payment_method')
                     ->label('Condición')
                     ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
                 Tables\Columns\TextColumn::make('sale_date')
