@@ -1,0 +1,104 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+
+/**
+ * @property int $id
+ * @property int|null $customer_id
+ * @property int $user_id
+ * @property int $branch_id
+ * @property int|null $cash_register_id
+ * @property float $subtotal
+ * @property float $discount
+ * @property float $tax
+ * @property float $total
+ * @property string $status
+ * @property Carbon $sale_date
+ * @property string|null $notes
+ * @property string|null $cancellation_reason
+ */
+class Sale extends Model
+{
+    use LogsActivity;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'customer_id',
+        'user_id',
+        'branch_id',
+        'cash_register_id',
+        'subtotal',
+        'discount',
+        'tax',
+        'total',
+        'status',
+        'sale_date',
+        'notes',
+        'cancellation_reason',
+    ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['total', 'status', 'discount', 'customer_id', 'cancellation_reason'])
+            ->logOnlyDirty()
+            ->useLogName('venta')
+            ->setDescriptionForEvent(fn (string $eventName) => "Venta #{$this->id} fue {$eventName}");
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'subtotal' => 'decimal:2',
+            'discount' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'total' => 'decimal:2',
+            'sale_date' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function cashRegister(): BelongsTo
+    {
+        return $this->belongsTo(CashRegister::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function receipt(): BelongsTo
+    {
+        return $this->belongsTo(Receipt::class);
+    }
+}
