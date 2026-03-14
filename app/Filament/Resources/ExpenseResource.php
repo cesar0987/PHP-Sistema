@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseResource\Pages;
-use App\Filament\Resources\ExpenseResource\RelationManagers;
 use App\Models\Expense;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,15 +10,17 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ExpenseResource extends Resource
 {
     protected static ?string $model = Expense::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
+
     protected static ?string $navigationGroup = 'Finanzas';
+
     protected static ?string $modelLabel = 'Gasto Operativo';
+
     protected static ?string $pluralModelLabel = 'Gastos Operativos';
 
     public static function form(Form $form): Form
@@ -73,7 +74,7 @@ class ExpenseResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Monto')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.') . ' Gs')
+                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.').' Gs')
                     ->sortable()
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('receipt_number')

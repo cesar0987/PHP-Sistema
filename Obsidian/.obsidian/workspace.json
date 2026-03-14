@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Plan_Fix_Receipt_Purchase.md",
+                "file": "Diagrama_ER.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Plan_Fix_Receipt_Purchase"
+              "title": "Diagrama_ER"
             }
           }
         ]
@@ -195,6 +195,18 @@
   },
   "active": "f90bba54a148e6ee",
   "lastOpenFiles": [
+    "Plan_Mantenimiento_Capacitacion.md",
+    "Deploy_Produccion.md",
+    "Runbook.md",
+    "Manual_Admin.md",
+    "Manual_Cajero.md",
+    "DFD_Sistema.md",
+    "Arquitectura_Sistema.md",
+    "Diagrama_ER.md",
+    "Documentacion_Tests.md",
+    "Plan_Fix_Receipt_Purchase.md",
+    "Plan_SoftDeletes_Auditoria_Mejoras.md",
+    "Errores_Sistema_Referencia.md",
     "Plan_Mejoras_Odoo_Ferreteria.md",
     "Plan_Navegacion_Atajos.md",
     "Plan_Flujo_Caja.md",

@@ -2,14 +2,11 @@
 
 namespace App\Filament\Resources\SupplierResource\RelationManagers;
 
-use Filament\Forms;
-use Filament\Forms\Form;
+use App\Filament\Resources\PurchaseResource;
+use App\Models\Purchase;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Models\Purchase;
 
 class PurchasesRelationManager extends RelationManager
 {
@@ -31,7 +28,7 @@ class PurchasesRelationManager extends RelationManager
                     ->date('d/m/Y'),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Monto Total')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.') . ' Gs')
+                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.').' Gs')
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
@@ -59,7 +56,7 @@ class PurchasesRelationManager extends RelationManager
                 Tables\Actions\Action::make('view_purchase')
                     ->label('Ver Compra')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Purchase $record): string => \App\Filament\Resources\PurchaseResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn (Purchase $record): string => PurchaseResource::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([
                 //

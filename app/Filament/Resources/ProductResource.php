@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductResource\Pages\CreateProduct;
 use App\Filament\Resources\ProductResource\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages\ListProducts;
+use App\Filament\Resources\ProductResource\RelationManagers\StockMovementsRelationManager;
 use App\Models\Product;
 use App\Models\Stock;
 use Filament\Forms;
@@ -79,7 +80,9 @@ class ProductResource extends Resource
                                     ->label('Precio de venta')
                                     ->numeric()
                                     ->default(0)
-                                    ->suffix('Gs'),
+                                    ->suffix('Gs')
+                                    ->gte('cost_price')
+                                    ->helperText('No debe ser menor al costo.'),
                                 Forms\Components\TextInput::make('tax_percentage')
                                     ->label('IVA %')
                                     ->numeric()
@@ -197,12 +200,44 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Product $record, Tables\Actions\DeleteAction $action) {
+                        $stock = Stock::whereHas('productVariant', function ($query) use ($record) {
+                            $query->where('product_id', $record->id);
+                        })->sum('quantity');
+
+                        if ($stock > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->warning()
+                                ->title('No se puede eliminar')
+                                ->body('Este producto aún posee stock activo.')
+                                ->send();
+
+                            $action->halt();
+                        }
+                    }),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (\Illuminate\Database\Eloquent\Collection $records, Tables\Actions\DeleteBulkAction $action) {
+                            foreach ($records as $record) {
+                                $stock = Stock::whereHas('productVariant', function ($query) use ($record) {
+                                    $query->where('product_id', $record->id);
+                                })->sum('quantity');
+                                
+                                if ($stock > 0) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->warning()
+                                        ->title('Error en eliminación masiva')
+                                        ->body("El producto {$record->name} aún posee stock activo.")
+                                        ->send();
+
+                                    $action->halt();
+                                }
+                            }
+                        }),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
@@ -219,7 +254,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\ProductResource\RelationManagers\StockMovementsRelationManager::class,
+            StockMovementsRelationManager::class,
         ];
     }
 

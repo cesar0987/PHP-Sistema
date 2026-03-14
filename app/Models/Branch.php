@@ -3,11 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\BranchScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
+#[ScopedBy([BranchScope::class])]
 class Branch extends Model
 {
+    use LogsActivity, SoftDeletes;
+
     protected $fillable = [
         'company_id',
         'name',
@@ -21,6 +29,15 @@ class Branch extends Model
         return [
             'active' => 'boolean',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->useLogName('sucursal')
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function company(): BelongsTo

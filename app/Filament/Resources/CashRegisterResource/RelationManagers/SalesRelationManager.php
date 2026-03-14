@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\CashRegisterResource\RelationManagers;
 
+use App\Filament\Resources\SaleResource;
+use App\Models\Sale;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SalesRelationManager extends RelationManager
 {
@@ -67,7 +67,7 @@ class SalesRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\Action::make('Ver Venta')
-                    ->url(fn (\App\Models\Sale $record): string => \App\Filament\Resources\SaleResource::getUrl('edit', ['record' => $record]))
+                    ->url(fn (Sale $record): string => SaleResource::getUrl('edit', ['record' => $record]))
                     ->icon('heroicon-o-eye'),
             ])
             ->bulkActions([

@@ -6,8 +6,10 @@ use App\Filament\Resources\SaleResource\Pages\CreateSale;
 use App\Filament\Resources\SaleResource\Pages\EditSale;
 use App\Filament\Resources\SaleResource\Pages\ListSales;
 use App\Models\Branch;
+use App\Models\CashRegister;
 use App\Models\ProductVariant;
 use App\Models\Sale;
+use App\Services\ReceiptService;
 use App\Services\SaleService;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
@@ -16,6 +18,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,7 +94,8 @@ class SaleResource extends Resource
                                         'credito' => 'Crédito',
                                     ])
                                     ->default('contado')
-                                    ->required(),
+                                    ->required()
+                                    ->helperText('Contado: afecta la caja elegida. Crédito: no entra a caja, va al saldo del cliente.'),
                                 Forms\Components\Select::make('document_type')
                                     ->label('Tipo de Documento')
                                     ->options([
@@ -102,7 +106,7 @@ class SaleResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, $state) {
                                         if ($state === 'ticket') {
-                                            $set('invoice_number', 'TCK-' . strtoupper(substr(uniqid(), -6)));
+                                            $set('invoice_number', 'TCK-'.strtoupper(substr(uniqid(), -6)));
                                             $set('timbrado', null);
                                             $set('cdc', null);
                                         } else {
@@ -117,7 +121,7 @@ class SaleResource extends Resource
                                     ->label('Nro. Documento / Factura')
                                     ->placeholder(fn (Get $get) => $get('document_type') === 'invoice' ? '001-001-1234567' : 'TCK-XXXXX')
                                     ->regex(fn (Get $get) => $get('document_type') === 'invoice' ? '/^\d{3}-\d{3}-\d{7}$/' : null)
-                                    ->default(fn() => 'TCK-' . strtoupper(substr(uniqid(), -6)))
+                                    ->default(fn () => 'TCK-'.strtoupper(substr(uniqid(), -6)))
                                     ->maxLength(15)
                                     ->required(),
                                 Forms\Components\TextInput::make('timbrado')
@@ -137,7 +141,7 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('cash_register_id')
                                     ->label('Caja')
                                     ->relationship('cashRegister', 'name')
-                                    ->default(fn () => \App\Models\CashRegister::where('user_id', auth()->id())->where('status', 'open')->first()?->id)
+                                    ->default(fn () => CashRegister::where('user_id', auth()->id())->where('status', 'open')->first()?->id)
                                     ->required()
                                     ->disabled()
                                     ->dehydrated(),
@@ -149,12 +153,12 @@ class SaleResource extends Resource
                                         $items = $get('items') ?? [];
                                         foreach ($items as $key => $item) {
                                             if (isset($item['product_variant_id'])) {
-                                                $variant = \App\Models\ProductVariant::with('product')->find($item['product_variant_id']);
+                                                $variant = ProductVariant::with('product')->find($item['product_variant_id']);
                                                 if ($variant) {
                                                     $basePrice = $variant->price ?? $variant->product->sale_price;
                                                     // Si es B2B le quitamos el 10% de IVA (Dividimos por 1.1)
                                                     $price = $state ? ($basePrice / 1.1) : $basePrice;
-                                                    
+
                                                     $set("items.{$key}.price", (float) $price);
                                                     $qty = $item['quantity'] ?? 1;
                                                     $discount = $item['discount'] ?? 0;
@@ -274,6 +278,21 @@ class SaleResource extends Resource
                                     ->required()
                                     ->default(1)
                                     ->minValue(1)
+                                    ->rule(
+                                        fn (Get $get) => function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $variantId = $get('product_variant_id');
+                                            $branchId = $get('../../branch_id');
+                                            if (!$variantId || !$branchId) return;
+                                            
+                                            $stock = \App\Models\Stock::where('product_variant_id', $variantId)
+                                                ->where('branch_id', $branchId)
+                                                ->sum('quantity');
+                                                
+                                            if ($value > $stock) {
+                                                $fail("Stock insuficiente en sucursal. Disp: {$stock}");
+                                            }
+                                        }
+                                    )
                                     ->reactive()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $price = (float) ($get('price') ?: 0);
@@ -311,6 +330,7 @@ class SaleResource extends Resource
                                         $set('subtotal', ($price * $qty) - $discount);
                                         self::updateTotals($get, $set);
                                     })
+                                    ->helperText('Descuento individual')
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
@@ -539,31 +559,32 @@ class SaleResource extends Resource
                         try {
                             $payments = $data['payments'] ?? [];
                             $totalPagado = array_sum(array_column($payments, 'amount'));
-                            
+
                             if ($totalPagado < $record->total) {
-                                \Filament\Notifications\Notification::make()
+                                Notification::make()
                                     ->title('Error de validación')
-                                    ->body("El monto pagado (" . number_format($totalPagado, 0, ',', '.') . ") es menor al total de la venta (" . number_format($record->total, 0, ',', '.') . ").")
+                                    ->body('El monto pagado ('.number_format($totalPagado, 0, ',', '.').') es menor al total de la venta ('.number_format($record->total, 0, ',', '.').').')
                                     ->danger()
                                     ->send();
-                                
+
                                 $action->cancel();
+
                                 return;
                             }
 
-                            $saleService = app(\App\Services\SaleService::class);
+                            $saleService = app(SaleService::class);
                             $saleService->approveSale($record, $payments);
 
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Venta aprobada')
                                 ->body("Nota de pedido #{$record->id} fue aprobada y cobrada correctamente.")
                                 ->success()
                                 ->send();
-                        } catch (\Filament\Support\Exceptions\Halt $e) {
+                        } catch (Halt $e) {
                             // Let Filament handle the halt exception to keep the modal open
                             throw $e;
                         } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Error al aprobar')
                                 ->body($e->getMessage())
                                 ->danger()
@@ -586,18 +607,18 @@ class SaleResource extends Resource
                                     'method' => 'cash',
                                     'amount' => $record->total,
                                     'reference' => 'Cobro rápido',
-                                ]
+                                ],
                             ];
-                            $saleService = app(\App\Services\SaleService::class);
+                            $saleService = app(SaleService::class);
                             $saleService->approveSale($record, $payments);
 
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Cobro rápido exitoso')
                                 ->body("Venta #{$record->id} aprobada y pagada en efectivo.")
                                 ->success()
                                 ->send();
                         } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Error al procesar')
                                 ->body($e->getMessage())
                                 ->danger()
@@ -610,14 +631,20 @@ class SaleResource extends Resource
                     ->icon('heroicon-o-printer')
                     ->color('info')
                     ->action(function (Sale $record) {
-                        $receiptService = app(\App\Services\ReceiptService::class);
-                        $receipt = $record->receipts()->where('type', 'ticket')->first();
-                        if (!$receipt) {
-                            $receipt = $receiptService->generateReceipt($record, 'ticket');
+                        $receiptService = app(ReceiptService::class);
+                        // Determinar tipo según document_type
+                        $type = $record->document_type === 'invoice' ? 'sale_invoice' : 'sale_ticket';
+                        $receipt = $record->receipts()->where('type', $type)->first();
+                        if (! $receipt) {
+                            $receipt = $receiptService->generateReceipt($record, $type);
                         }
-                        return response()->streamDownload(function () use ($receiptService, $receipt) {
-                            echo $receiptService->generatePdf($receipt->sale, $receipt, 'ticket')->output();
-                        }, "receipt_{$receipt->number}.pdf");
+                        $filename = $record->document_type === 'invoice'
+                            ? "factura_{$receipt->number}.pdf"
+                            : "ticket_{$receipt->number}.pdf";
+
+                        return response()->streamDownload(function () use ($receiptService, $record, $receipt, $type) {
+                            echo $receiptService->generatePdf($record, $receipt, $type)->output();
+                        }, $filename);
                     })
                     ->visible(fn (Sale $record): bool => in_array($record->status, ['completed', 'pending'])),
                 Tables\Actions\Action::make('anular')

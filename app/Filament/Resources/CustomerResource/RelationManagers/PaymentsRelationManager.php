@@ -7,9 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Get;
 
 class PaymentsRelationManager extends RelationManager
 {
@@ -60,7 +57,7 @@ class PaymentsRelationManager extends RelationManager
                     ->badge(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Monto Abonado')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.') . ' Gs')
+                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.').' Gs')
                     ->weight('bold')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('notes')

@@ -6,6 +6,7 @@ use App\Filament\Resources\CustomerResource\Pages\CreateCustomer;
 use App\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use App\Filament\Resources\CustomerResource\Pages\ListCustomers;
 use App\Filament\Resources\CustomerResource\Pages\ViewCustomer;
+use App\Filament\Resources\CustomerResource\RelationManagers\PaymentsRelationManager;
 use App\Models\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,7 +15,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\CustomerResource\RelationManagers\PaymentsRelationManager;
 
 class CustomerResource extends Resource
 {
@@ -59,7 +59,7 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('email')->label('Correo')->searchable(),
                 Tables\Columns\TextColumn::make('current_balance')
                     ->label('Saldo Adeudado')
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.') . ' Gs')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', '.').' Gs')
                     ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('active')->label('Activo')->boolean(),

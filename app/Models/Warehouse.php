@@ -3,8 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\BranchScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * @property int $id
@@ -14,8 +19,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_default
  * @property bool $active
  */
+#[ScopedBy([BranchScope::class])]
 class Warehouse extends Model
 {
+    use LogsActivity, SoftDeletes;
+
     protected $fillable = [
         'branch_id',
         'name',
@@ -30,6 +38,15 @@ class Warehouse extends Model
             'is_default' => 'boolean',
             'active' => 'boolean',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->useLogName('almacen')
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function branch(): BelongsTo

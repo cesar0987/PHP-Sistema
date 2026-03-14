@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\BranchScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -25,6 +27,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string|null $notes
  * @property string|null $cancellation_reason
  */
+#[ScopedBy([BranchScope::class])]
 class Sale extends Model
 {
     use LogsActivity;

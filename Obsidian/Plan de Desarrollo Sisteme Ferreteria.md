@@ -643,13 +643,84 @@ Remera Nike (product)
   - ReceiptService (4 métodos), LocationService (9 métodos)
   - Descripciones en español, `@param`, `@return`, `@throws`
 
+---
+
+## Comprobantes y Plantillas — Sesión 5a
+
+### Facturas A4
+- [x] Diseño de factura A4 para ventas (`invoice.blade.php`) — esquema amber
+- [x] Diseño de factura A4 para compras (`purchase_invoice.blade.php`) — esquema verde, sello "DOCUMENTO INTERNO"
+- [x] Soporte de logo dinámico desde BD (`companies.logo`)
+- [x] Migración: `add_logo_to_companies_table`
+
+### Impresión inteligente
+- [x] SaleResource: imprime factura A4 o ticket 80mm según `document_type`
+- [x] PurchaseResource: dos acciones separadas — "Imprimir Factura" e "Imprimir Ticket"
+- [x] ReceiptService: crea directorio `storage/app/receipts/` automáticamente
+
+### Plantillas de comprobantes
+- [x] ReceiptTemplateResource refactorizado: páginas List/Create/Edit separadas
+- [x] 5 tipos de plantillas: `sale_ticket`, `sale_invoice`, `purchase_ticket`, `purchase_invoice`, `cash_register_report`
+- [x] Categorización Ventas/Compras/Reportes con badges de colores
+- [x] Editor de código monoespaciado a pantalla completa
+- [x] Variables disponibles por tipo de plantilla
+- [x] Acción "Restaurar a Default"
+
+---
+
+## Auditoría, SoftDeletes y Manejo de Errores — Sesión 5b
+
+### Manejo global de errores
+- [x] Handler global en `AppServiceProvider::configureFilamentExceptionHandling()`
+  - Intercepta `QueryException` en rutas Livewire/Filament
+  - FK Constraint → "No se puede eliminar este registro"
+  - UNIQUE → "Registro duplicado"
+  - NOT NULL → "Campo obligatorio vacío"
+  - Database locked → "Base de datos ocupada"
+  - Fallback genérico con detalle técnico resumido
+  - Traducciones automáticas de tablas y campos al español
+
+### SoftDeletes expandido (10 modelos → 13 total)
+- [x] Soft deletes agregados a: Warehouse, Branch, Category, CashRegister, ExpenseCategory
+  - Migración: `add_soft_deletes_to_critical_models`
+- [x] TrashedFilter + RestoreAction en 4 recursos adicionales: Warehouse, Category, CashRegister, ExpenseCategory
+
+### LogsActivity expandido (7 modelos → 15 total)
+- [x] LogsActivity agregado a 8 modelos adicionales:
+  - Warehouse (`almacen`), Branch (`sucursal`), Category (`categoria`)
+  - CashRegister (`caja`), ExpenseCategory (`categoria_gasto`)
+  - Expense (`gasto`), InventoryCount (`conteo_inventario`), Stock (`stock`)
+  - Todos con `logOnlyDirty()` y `dontSubmitEmptyLogs()`
+
+### ActivityResource mejorado
+- [x] 15 módulos con emojis y colores en filtro multi-select
+- [x] Filtro por rango de fechas (desde/hasta)
+- [x] Filtro por usuario (query directa a Users)
+- [x] Pestañas por categoría: Todos, Ventas, Compras, Inventario, Finanzas, Configuración
+- [x] Subject type traducido al español (Sale→Venta, etc.)
+- [x] Auto-refresh cada 30 segundos
+- [x] Vista detallada mejorada con secciones old/new separadas
+
+### InventoryCountResource
+- [x] Movido a grupo "Inventario" en navegación
+- [x] Labels traducidos: "Conteo de Inventario" / "Conteos de Inventario"
+- [x] Icono: `heroicon-o-clipboard-document-check`
+- [x] TrashedFilter + RestoreAction agregados
+- [x] Columna de conteo de ítems con badge
+
+### Documentación
+- [x] `Obsidian/Errores_Sistema_Referencia.md` — guía completa de errores del sistema
+- [x] `Obsidian/Plan_SoftDeletes_Auditoria_Mejoras.md` — plan consolidado
+
 ### Pendiente
-- [ ] Etiquetas QR por ubicacion (Fase 2)
+- [ ] Etiquetas QR por ubicación (Fase 2)
 - [ ] Testing automatizado (PHPUnit/Pest)
-- [ ] Facturacion electronica Paraguay (Fase 5)
+- [ ] Facturación electrónica Paraguay (Fase 5)
 - [ ] Eager loading optimizado en Resources (N+1 en relaciones de tabla)
 - [ ] Atajos de teclado en SaleResource (F2 nueva venta, F4 cobrar)
 - [ ] Notificaciones en tiempo real para stock crítico
+- [ ] Exportar reportes a Excel (`maatwebsite/excel`)
+- [ ] Pagos múltiples combinados en una misma venta
 
 ---
 

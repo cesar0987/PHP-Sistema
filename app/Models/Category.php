@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Category extends Model
 {
+    use LogsActivity, SoftDeletes;
+
     protected $fillable = [
         'parent_id',
         'name',
@@ -22,6 +27,15 @@ class Category extends Model
         return [
             'active' => 'boolean',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->useLogName('categoria')
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     protected static function booted()

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('is_matched')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['inventory_count_id', 'product_variant_id'], 'count_item_variant_unique');
         });
     }

@@ -5,12 +5,17 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CashRegisterResource\Pages\CreateCashRegister;
 use App\Filament\Resources\CashRegisterResource\Pages\EditCashRegister;
 use App\Filament\Resources\CashRegisterResource\Pages\ListCashRegisters;
+use App\Filament\Resources\CashRegisterResource\Pages\ViewCashRegister;
+use App\Filament\Resources\CashRegisterResource\RelationManagers\SalesRelationManager;
 use App\Models\CashRegister;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CashRegisterResource extends Resource
 {
@@ -78,80 +83,107 @@ class CashRegisterResource extends Resource
     {
         return $table
             ->columns([
-            Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
-            Tables\Columns\TextColumn::make('branch.name')->label('Sucursal'),
-            Tables\Columns\TextColumn::make('user.name')->label('Cajero'),
-            Tables\Columns\TextColumn::make('opening_amount')->label('Apertura')
-            ->formatStateUsing(fn($state) => number_format($state, 0, ',', '.') . ' Gs'),
-            Tables\Columns\TextColumn::make('closing_amount')->label('Cierre')
-            ->formatStateUsing(fn($state) => $state ? number_format($state, 0, ',', '.') . ' Gs' : '-'),
-            Tables\Columns\TextColumn::make('status')->label('Estado')->badge()
-            ->color(fn(string $state): string => match ($state) {
-            'open' => 'success',
-            'closed' => 'gray',
-            default => 'gray',
-        })
-            ->formatStateUsing(fn(string $state): string => match ($state) {
-            'open' => 'Abierta',
-            'closed' => 'Cerrada',
-            default => $state,
-        }),
-            Tables\Columns\TextColumn::make('opened_at')->label('Apertura')->dateTime('d/m/Y H:i'),
-        ])
-            ->filters([
-            Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
-                'open' => 'Abierta',
-                'closed' => 'Cerrada',
-            ]),
-        ])
-            ->actions([
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\Action::make('cerrar')
-            ->label('Cerrar Caja')
-            ->icon('heroicon-o-lock-closed')
-            ->color('danger')
-            ->requiresConfirmation()
-            ->modalHeading('Cierre de Caja')
-            ->modalDescription('Ingrese el efectivo físico que tiene en caja para efectuar el cierre ciego.')
-            ->form([
-                Forms\Components\TextInput::make('closing_amount')
-                ->label('Efectivo Físico')
-                ->numeric()
-                ->required()
-                ->prefix('Gs'),
-                Forms\Components\Textarea::make('notes')
-                ->label('Observaciones')
-                ->rows(2)
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
+                Tables\Columns\TextColumn::make('branch.name')->label('Sucursal'),
+                Tables\Columns\TextColumn::make('user.name')->label('Cajero'),
+                Tables\Columns\TextColumn::make('opening_amount')->label('Apertura')
+                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.').' Gs'),
+                Tables\Columns\TextColumn::make('closing_amount')->label('Cierre')
+                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 0, ',', '.').' Gs' : '-'),
+                Tables\Columns\TextColumn::make('status')->label('Estado')->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'open' => 'success',
+                        'closed' => 'gray',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'open' => 'Abierta',
+                        'closed' => 'Cerrada',
+                        default => $state,
+                    }),
+                Tables\Columns\TextColumn::make('opened_at')->label('Apertura')->dateTime('d/m/Y H:i'),
             ])
-            ->action(function (\App\Models\CashRegister $record, array $data): void {
-            $record->update([
-                    'status' => 'closed',
-                    'closed_at' => now(),
-                    'closing_amount' => $data['closing_amount'],
-                    'notes' => ltrim($record->notes . "\nCierre: " . ($data['notes'] ?? '')),
-                ]);
+            ->filters([
+                            Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
+                                'open' => 'Abierta',
+                                'closed' => 'Cerrada',
+                            ]),
+                            Tables\Filters\TrashedFilter::make()->label('Eliminados'),
+                        ])
+            ->actions([
+                            Tables\Actions\ViewAction::make(),
+                            Tables\Actions\EditAction::make(),
+                            Tables\Actions\Action::make('cerrar')
+                                ->label('Cerrar Caja')
+                                ->icon('heroicon-o-lock-closed')
+                                ->color('danger')
+                                ->requiresConfirmation()
+                                ->modalHeading('Cierre de Caja')
+                                ->modalDescription('Ingrese el efectivo físico que tiene en caja para efectuar el cierre ciego.')
+                                ->form([
+                                    Forms\Components\TextInput::make('closing_amount')
+                                        ->label('Efectivo Físico')
+                                        ->numeric()
+                                        ->required()
+                                        ->prefix('Gs'),
+                                    Forms\Components\Textarea::make('notes')
+                                        ->label('Observaciones')
+                                        ->rows(2),
+                                ])
+                                ->action(function (CashRegister $record, array $data, Tables\Actions\Action $action): void {
+                                    $cashSales = \App\Models\Sale::where('cash_register_id', $record->id)
+                                        ->whereIn('status', ['completed'])
+                                        ->where('payment_method', 'contado')
+                                        ->sum('total');
+                                        
+                                    $expected = $record->opening_amount + $cashSales;
+                                    $reported = (float) $data['closing_amount'];
+                                    
+                                    if ($expected > 0) {
+                                        $difference = abs($reported - $expected);
+                                        if (($difference / $expected) > 0.10) {
+                                            Notification::make()
+                                                ->warning()
+                                                ->title('Alerta de Descuadre')
+                                                ->body("Diferencia mayor al 10%. Esperado: ".number_format($expected, 0, ',', '.')." Gs. Reportado: ".number_format($reported, 0, ',', '.')." Gs.")
+                                                ->send();
+                                        }
+                                    }
 
-            \Filament\Notifications\Notification::make()
-                ->title('Caja Cerrada Exitosamente')
-                ->success()
-                ->send();
-        })
-            ->visible(fn(\App\Models\CashRegister $record): bool => $record->status === 'open'),
-            Tables\Actions\Action::make('print')
-                ->label('Imprimir Reporte')
-                ->icon('heroicon-o-printer')
-                ->color('info')
-                ->url(fn (\App\Models\CashRegister $record) => route('cash-register.print', $record))
-                ->openUrlInNewTab(),
-        ]);
+                                    $record->update([
+                                        'status' => 'closed',
+                                        'closed_at' => now(),
+                                        'closing_amount' => $reported,
+                                        'notes' => ltrim($record->notes."\nCierre: ".($data['notes'] ?? '')),
+                                    ]);
+
+                                    Notification::make()
+                                        ->title('Caja Cerrada Exitosamente')
+                                        ->success()
+                                        ->send();
+                                })
+                                ->visible(fn (CashRegister $record): bool => $record->status === 'open'),
+                            Tables\Actions\Action::make('print')
+                                ->label('Imprimir Reporte')
+                                ->icon('heroicon-o-printer')
+                                ->color('info')
+                                ->url(fn (CashRegister $record) => route('cash-register.print', $record))
+                                ->openUrlInNewTab(),
+                            Tables\Actions\RestoreAction::make(),
+                        ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\CashRegisterResource\RelationManagers\SalesRelationManager::class ,
+            SalesRelationManager::class,
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getPages(): array
@@ -159,7 +191,7 @@ class CashRegisterResource extends Resource
         return [
             'index' => ListCashRegisters::route('/'),
             'create' => CreateCashRegister::route('/create'),
-            'view' => \App\Filament\Resources\CashRegisterResource\Pages\ViewCashRegister::route('/{record}'),
+            'view' => ViewCashRegister::route('/{record}'),
             'edit' => EditCashRegister::route('/{record}/edit'),
         ];
     }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\InventoryAdjustmentResource\Pages;
 
 use App\Filament\Resources\InventoryAdjustmentResource;
+use App\Services\InventoryService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateInventoryAdjustment extends CreateRecord
@@ -12,7 +13,7 @@ class CreateInventoryAdjustment extends CreateRecord
     protected function afterCreate(): void
     {
         if ($this->record->status === 'approved') {
-            app(\App\Services\InventoryService::class)->processAdjustment($this->record);
+            app(InventoryService::class)->processAdjustment($this->record);
         }
     }
 }

@@ -91,6 +91,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'eliminar_usuarios',
             'gestionar_roles',
 
+            // Gastos
+            'ver_gastos',
+            'crear_gastos',
+            'editar_gastos',
+            'eliminar_gastos',
+
             // Dashboard y reportes
             'ver_dashboard',
             'ver_reportes',

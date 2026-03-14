@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\InventoryAdjustmentResource\Pages;
 
 use App\Filament\Resources\InventoryAdjustmentResource;
+use App\Models\InventoryAdjustment;
+use App\Models\StockMovement;
+use App\Services\InventoryService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -20,12 +23,12 @@ class EditInventoryAdjustment extends EditRecord
     protected function afterSave(): void
     {
         if ($this->record->status === 'approved') {
-            $hasMovements = \App\Models\StockMovement::where('reference_type', \App\Models\InventoryAdjustment::class)
+            $hasMovements = StockMovement::where('reference_type', InventoryAdjustment::class)
                 ->where('reference_id', $this->record->id)
                 ->exists();
-                
-            if (!$hasMovements) {
-                app(\App\Services\InventoryService::class)->processAdjustment($this->record);
+
+            if (! $hasMovements) {
+                app(InventoryService::class)->processAdjustment($this->record);
             }
         }
     }

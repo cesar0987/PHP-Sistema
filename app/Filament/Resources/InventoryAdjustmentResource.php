@@ -6,16 +6,16 @@ use App\Filament\Resources\InventoryAdjustmentResource\Pages\CreateInventoryAdju
 use App\Filament\Resources\InventoryAdjustmentResource\Pages\EditInventoryAdjustment;
 use App\Filament\Resources\InventoryAdjustmentResource\Pages\ListInventoryAdjustments;
 use App\Models\InventoryAdjustment;
+use App\Models\ProductVariant;
+use App\Models\Warehouse;
+use App\Services\InventoryService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Models\ProductVariant;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Services\InventoryService;
 
 class InventoryAdjustmentResource extends Resource
 {
@@ -60,7 +60,7 @@ class InventoryAdjustmentResource extends Resource
                                             $v->id => $v->product->name
                                                 .($v->color ? " - {$v->color}" : '')
                                                 .($v->size ? " - {$v->size}" : '')
-                                                ." (SKU: {$v->sku})"
+                                                ." (SKU: {$v->sku})",
                                         ]);
                                 })
                                 ->searchable()
@@ -69,7 +69,7 @@ class InventoryAdjustmentResource extends Resource
                                 ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                     if ($state && $get('../../warehouse_id')) {
                                         $variant = ProductVariant::find($state);
-                                        $warehouse = \App\Models\Warehouse::find($get('../../warehouse_id'));
+                                        $warehouse = Warehouse::find($get('../../warehouse_id'));
                                         if ($variant && $warehouse) {
                                             $stock = app(InventoryService::class)->getStockByWarehouse($variant, $warehouse);
                                             $set('quantity_before', $stock ? $stock->quantity : 0);

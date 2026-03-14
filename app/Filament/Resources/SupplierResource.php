@@ -6,6 +6,7 @@ use App\Filament\Resources\SupplierResource\Pages\CreateSupplier;
 use App\Filament\Resources\SupplierResource\Pages\EditSupplier;
 use App\Filament\Resources\SupplierResource\Pages\ListSuppliers;
 use App\Filament\Resources\SupplierResource\Pages\ViewSupplier;
+use App\Filament\Resources\SupplierResource\RelationManagers\PurchasesRelationManager;
 use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -78,7 +79,7 @@ class SupplierResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\SupplierResource\RelationManagers\PurchasesRelationManager::class,
+            PurchasesRelationManager::class,
         ];
     }
 

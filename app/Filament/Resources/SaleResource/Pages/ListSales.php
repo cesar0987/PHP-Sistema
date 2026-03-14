@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SaleResource\Pages;
 
 use App\Filament\Resources\SaleResource;
+use App\Models\CashRegister;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -12,7 +13,7 @@ class ListSales extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        $hasOpenRegister = \App\Models\CashRegister::where('user_id', auth()->id())
+        $hasOpenRegister = CashRegister::where('user_id', auth()->id())
             ->where('status', 'open')
             ->exists();
 

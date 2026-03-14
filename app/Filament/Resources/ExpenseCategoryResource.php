@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseCategoryResource\Pages;
-use App\Filament\Resources\ExpenseCategoryResource\RelationManagers;
 use App\Models\ExpenseCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,8 +16,12 @@ class ExpenseCategoryResource extends Resource
 {
     protected static ?string $model = ExpenseCategory::class;
 
+    protected static ?string $navigationIcon = 'heroicon-o-folder';
+
     protected static ?string $navigationGroup = 'Finanzas';
+
     protected static ?string $modelLabel = 'Categoría de Gasto';
+
     protected static ?string $pluralModelLabel = 'Categorías de Gastos';
 
     public static function form(Form $form): Form
@@ -59,14 +62,17 @@ class ExpenseCategoryResource extends Resource
                     ->label('Solo Activos')
                     ->query(fn (Builder $query) => $query->where('active', true))
                     ->default(),
+                Tables\Filters\TrashedFilter::make()->label('Eliminados'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -76,6 +82,12 @@ class ExpenseCategoryResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getPages(): array

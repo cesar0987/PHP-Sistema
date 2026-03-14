@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Sale;
 use App\Models\CustomerPayment;
+use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class CreditService
 {
@@ -28,11 +28,11 @@ class CreditService
             if ($amountPaid > 0) {
                 CustomerPayment::create([
                     'customer_id' => $sale->customer_id,
-                    'sale_id'     => $sale->id,
-                    'amount'      => $amountPaid,
-                    'date'        => now()->toDateString(),
-                    'method'      => $sale->payment_method === 'credito' ? 'Entrega a cuenta' : 'Pagado al contado',
-                    'notes'       => "Pago inicial de Factura/Ticket #{$sale->id}",
+                    'sale_id' => $sale->id,
+                    'amount' => $amountPaid,
+                    'date' => now()->toDateString(),
+                    'method' => $sale->payment_method === 'credito' ? 'Entrega a cuenta' : 'Pagado al contado',
+                    'notes' => "Pago inicial de Factura/Ticket #{$sale->id}",
                 ]);
             }
 
@@ -65,7 +65,7 @@ class CreditService
         // Idealmente el Customer model tendría la columna current_balance
         // Por ahora, asumimos que existe o podemos dejarlo sin guardar si la columna no existe aún
         // Verificamos si la columna current_balance existe:
-        if (\Illuminate\Support\Facades\Schema::hasColumn('customers', 'current_balance')) {
+        if (Schema::hasColumn('customers', 'current_balance')) {
             $customer->update(['current_balance' => $balance]);
         }
     }

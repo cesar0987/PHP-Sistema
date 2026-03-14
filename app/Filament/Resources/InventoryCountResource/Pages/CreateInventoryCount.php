@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\InventoryCountResource\Pages;
 
 use App\Filament\Resources\InventoryCountResource;
-use Filament\Actions;
-use Filament\Resources\Pages\CreateRecord;
+use App\Models\InventoryCount;
+use App\Models\InventoryCountItem;
 use App\Models\ProductVariant;
+use App\Models\Stock;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\DB;
 
 class CreateInventoryCount extends CreateRecord
@@ -24,17 +26,17 @@ class CreateInventoryCount extends CreateRecord
 
     protected function afterCreate(): void
     {
-        /** @var \App\Models\InventoryCount $record */
+        /** @var InventoryCount $record */
         $record = $this->record;
 
         // Populate items with all active product variants
         $variants = ProductVariant::whereHas('product', fn ($q) => $q->where('active', true))->get();
-        
+
         $itemsData = [];
         $now = now();
-        
+
         foreach ($variants as $variant) {
-            $stock = \App\Models\Stock::where('product_variant_id', $variant->id)
+            $stock = Stock::where('product_variant_id', $variant->id)
                 ->where('warehouse_id', $record->warehouse_id)
                 ->first();
 
@@ -51,12 +53,12 @@ class CreateInventoryCount extends CreateRecord
 
         // Chunk insert to avoid hitting DB limits
         foreach (array_chunk($itemsData, 500) as $chunk) {
-            \App\Models\InventoryCountItem::insert($chunk);
+            InventoryCountItem::insert($chunk);
         }
 
         Notification::make()
             ->title('Inventario inicializado')
-            ->body('Se han cargado ' . count($itemsData) . ' productos para contar.')
+            ->body('Se han cargado '.count($itemsData).' productos para contar.')
             ->success()
             ->send();
     }

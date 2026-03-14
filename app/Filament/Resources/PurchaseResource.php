@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\ProductVariant;
 use App\Models\Purchase;
 use App\Models\Warehouse;
+use App\Services\ReceiptService;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
@@ -77,7 +78,8 @@ class PurchaseResource extends Resource
                                 Forms\Components\DatePicker::make('purchase_date')
                                     ->label('Fecha de compra')
                                     ->required()
-                                    ->default(now()),
+                                    ->default(now())
+                                    ->maxDate(now()),
                                 Forms\Components\Select::make('status')
                                     ->label('Estado')
                                     ->options([
@@ -325,19 +327,35 @@ class PurchaseResource extends Resource
                     ->label('Eliminados'),
             ])
             ->actions([
-                Tables\Actions\Action::make('imprimir')
-                    ->label('Imprimir')
-                    ->icon('heroicon-o-printer')
+                Tables\Actions\Action::make('imprimir_factura')
+                    ->label('Imprimir Factura')
+                    ->icon('heroicon-o-document-text')
                     ->color('info')
                     ->action(function (Purchase $record) {
-                        $receiptService = app(\App\Services\ReceiptService::class);
+                        $receiptService = app(ReceiptService::class);
+                        $receipt = $record->receipts()->where('type', 'purchase_invoice')->first();
+                        if (! $receipt) {
+                            $receipt = $receiptService->generateReceipt($record, 'purchase_invoice');
+                        }
+
+                        return response()->streamDownload(function () use ($receiptService, $receipt, $record) {
+                            echo $receiptService->generatePdf($record, $receipt, 'purchase_invoice')->output();
+                        }, "compra_factura_{$receipt->number}.pdf");
+                    }),
+                Tables\Actions\Action::make('imprimir_ticket')
+                    ->label('Imprimir Ticket')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->action(function (Purchase $record) {
+                        $receiptService = app(ReceiptService::class);
                         $receipt = $record->receipts()->where('type', 'purchase_ticket')->first();
-                        if (!$receipt) {
+                        if (! $receipt) {
                             $receipt = $receiptService->generateReceipt($record, 'purchase_ticket');
                         }
+
                         return response()->streamDownload(function () use ($receiptService, $receipt, $record) {
                             echo $receiptService->generatePdf($record, $receipt, 'purchase_ticket')->output();
-                        }, "compra_{$receipt->number}.pdf");
+                        }, "compra_ticket_{$receipt->number}.pdf");
                     }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

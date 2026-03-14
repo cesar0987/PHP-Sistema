@@ -9,6 +9,7 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
+#[ScopedBy([BranchScope::class])]
 class User extends Authenticatable
 {
     use HasFactory, HasRoles, LogsActivity, Notifiable;
@@ -28,6 +29,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'branch_id',
     ];
 
     protected $hidden = [
@@ -66,5 +68,10 @@ class User extends Authenticatable
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

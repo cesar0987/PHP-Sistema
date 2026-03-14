@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\CashRegister;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 
 class CashRegisterController extends Controller
 {
@@ -14,9 +13,9 @@ class CashRegisterController extends Controller
 
         $pdf = Pdf::loadView('pdf.cash_register_report', [
             'cashRegister' => $cashRegister,
-            'sales' => $sales
+            'sales' => $sales,
         ]);
 
-        return $pdf->stream('reporte_caja_' . $cashRegister->id . '.pdf');
+        return $pdf->stream('reporte_caja_'.$cashRegister->id.'.pdf');
     }
 }

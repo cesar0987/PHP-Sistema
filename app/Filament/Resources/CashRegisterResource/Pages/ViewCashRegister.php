@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\CashRegisterResource\Pages;
 
 use App\Filament\Resources\CashRegisterResource;
-use Filament\Actions;
 use App\Filament\Resources\CashRegisterResource\Widgets\CashRegisterStats;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -14,7 +13,7 @@ class ViewCashRegister extends ViewRecord
     protected function getHeaderWidgets(): array
     {
         return [
-            CashRegisterStats::class ,
+            CashRegisterStats::class,
         ];
     }
 }

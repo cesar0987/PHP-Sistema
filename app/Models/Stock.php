@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * @property int $id
@@ -13,6 +15,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Stock extends Model
 {
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->useLogName('stock')
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected $fillable = [
         'product_variant_id',
         'warehouse_id',

@@ -24,12 +24,12 @@ class CashRegisterStats extends BaseWidget
         $expectedCash = $cashRegister->opening_amount + $totalSales;
 
         return [
-            Stat::make('Monto de Apertura', number_format($cashRegister->opening_amount, 0, ',', '.') . ' Gs')
+            Stat::make('Monto de Apertura', number_format($cashRegister->opening_amount, 0, ',', '.').' Gs')
                 ->icon('heroicon-o-banknotes'),
-            Stat::make('Total Vendido (Pagado)', number_format($totalSales, 0, ',', '.') . ' Gs')
+            Stat::make('Total Vendido (Pagado)', number_format($totalSales, 0, ',', '.').' Gs')
                 ->icon('heroicon-o-currency-dollar')
                 ->color('success'),
-            Stat::make('Efectivo Esperado', number_format($expectedCash, 0, ',', '.') . ' Gs')
+            Stat::make('Efectivo Esperado', number_format($expectedCash, 0, ',', '.').' Gs')
                 ->icon('heroicon-o-calculator')
                 ->description('Apertura + Total Vendido')
                 ->color('info'),

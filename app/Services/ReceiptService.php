@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Receipt;
-use App\Models\Sale;
+use App\Models\Company;
 use App\Models\Purchase;
+use App\Models\Receipt;
 use App\Models\ReceiptTemplate;
+use App\Models\Sale;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Blade;
 
 /**
  * Servicio de generación de comprobantes.
@@ -52,7 +54,12 @@ class ReceiptService
         $filename = "receipt_{$type}_{$number}.pdf";
         $path = "receipts/{$filename}";
 
-        $pdf->save(storage_path("app/{$path}"));
+        $fullPath = storage_path("app/{$path}");
+        $dir = dirname($fullPath);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $pdf->save($fullPath);
 
         $receipt->update(['file_path' => $path]);
 
@@ -75,18 +82,19 @@ class ReceiptService
             $record->loadMissing(['customer', 'user', 'items.productVariant.product', 'branch']);
             $data['sale'] = $record;
             $data['company'] = $record->branch->company ?? null;
-        } else if ($record instanceof Purchase) {
-            $record->loadMissing(['supplier', 'user', 'items.productVariant.product']);
+        } elseif ($record instanceof Purchase) {
+            $record->loadMissing(['supplier', 'user', 'items.productVariant.product', 'branch', 'warehouse']);
             $data['purchase'] = $record;
-            $data['company'] = \App\Models\Company::first(); // Assuming a global company if not separated
+            $data['company'] = $record->branch->company ?? Company::first();
         }
 
         // Buscar si existe una plantilla dinámica para este tipo
         $template = ReceiptTemplate::where('type', $type)->where('is_active', true)->first();
 
-        if ($template && !empty($template->content_html)) {
+        if ($template && ! empty($template->content_html)) {
             // Renderizar Blade en memoria
-            $html = \Illuminate\Support\Facades\Blade::render($template->content_html, $data);
+            $html = Blade::render($template->content_html, $data);
+
             return Pdf::loadHTML($html);
         }
 
@@ -95,6 +103,7 @@ class ReceiptService
             'sale_invoice' => 'pdf.invoice',
             'sale_receipt' => 'pdf.receipt',
             'purchase_ticket' => 'pdf.purchase_ticket',
+            'purchase_invoice' => 'pdf.purchase_invoice',
             default => 'pdf.ticket',
         };
 

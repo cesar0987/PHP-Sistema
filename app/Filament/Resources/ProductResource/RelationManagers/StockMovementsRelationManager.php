@@ -2,13 +2,9 @@
 
 namespace App\Filament\Resources\ProductResource\RelationManagers;
 
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StockMovementsRelationManager extends RelationManager
 {
@@ -49,11 +45,12 @@ class StockMovementsRelationManager extends RelationManager
                     ->formatStateUsing(function ($state, $record) {
                         // Intentar mapear las clases o tipos de modelo al español
                         $classBasename = class_basename($state);
+
                         return match ($classBasename) {
-                            'Sale' => "Venta #" . $record->reference_id,
-                            'Purchase' => "Compra #" . $record->reference_id,
-                            'InventoryAdjustment' => "Ajuste #" . $record->reference_id,
-                            default => $classBasename . ($record->reference_id ? " #" . $record->reference_id : ''),
+                            'Sale' => 'Venta #'.$record->reference_id,
+                            'Purchase' => 'Compra #'.$record->reference_id,
+                            'InventoryAdjustment' => 'Ajuste #'.$record->reference_id,
+                            default => $classBasename.($record->reference_id ? ' #'.$record->reference_id : ''),
                         };
                     }),
                 Tables\Columns\TextColumn::make('warehouse.name')

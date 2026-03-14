@@ -1,6 +1,6 @@
 
 
-> **Stack:** Laravel · Filament v3 · Livewire v3 · PostgreSQL  
+> **Stack:** Laravel · Filament v3 · Livewire v3 · SQLite (dev)  
 > **Nivel:** Semi-senior · Desarrollo con IA + MCP  
 > **Áreas:** Seguridad · Performance · UX · Integraciones · Testing · Documentación
 
@@ -16,6 +16,9 @@
 | Integraciones externas      | 9     | ⬜⬜⬜⬜⬜⬜⬜⬜⬜  |
 | Testing y calidad           | 10    | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | Documentación               | 9     | ✅✅⬜⬜⬜⬜⬜⬜⬜  |
+
+> **Última actualización:** Sesión 5 (14/03/2026)  
+> **Avances recientes:** SoftDeletes en 13 modelos, LogsActivity en 15 modelos, ActivityResource con pestañas por categoría, handler global de errores de BD, InventoryCount en grupo Inventario
 
 ---
 

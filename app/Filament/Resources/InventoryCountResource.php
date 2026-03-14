@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryCountResource\Pages;
-use App\Filament\Resources\InventoryCountResource\RelationManagers;
 use App\Models\InventoryCount;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,13 +16,22 @@ class InventoryCountResource extends Resource
 {
     protected static ?string $model = InventoryCount::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+
+    protected static ?string $navigationGroup = 'Inventario';
+
+    protected static ?string $modelLabel = 'Conteo de Inventario';
+
+    protected static ?string $pluralModelLabel = 'Conteos de Inventario';
+
+    protected static ?int $navigationSort = 30;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Detalles de Toma Física')
+                Forms\Components\Section::make('Detalles del Conteo')
+                    ->icon('heroicon-o-clipboard-document-check')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -35,8 +43,8 @@ class InventoryCountResource extends Resource
                                     ->searchable()
                                     ->preload(),
                                 Forms\Components\TextInput::make('name')
-                                    ->label('Nombre de la Toma (opcional)')
-                                    ->placeholder('Ej: Corte de caja mensual')
+                                    ->label('Nombre del Conteo (opcional)')
+                                    ->placeholder('Ej: Conteo mensual marzo 2026')
                                     ->maxLength(255),
                                 Forms\Components\Textarea::make('notes')
                                     ->label('Notas / Observaciones')
@@ -77,11 +85,12 @@ class InventoryCountResource extends Resource
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Almacén')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->icon('heroicon-o-building-storefront'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Título')
                     ->searchable()
-                    ->placeholder('-'),
+                    ->placeholder('Sin título'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
@@ -99,13 +108,26 @@ class InventoryCountResource extends Resource
                         'cancelled' => 'Cancelado',
                         default => $state,
                     }),
+                Tables\Columns\TextColumn::make('items_count')
+                    ->label('Ítems')
+                    ->counts('items')
+                    ->badge()
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Responsable')
-                    ->sortable(),
+                    ->sortable()
+                    ->icon('heroicon-o-user'),
                 Tables\Columns\TextColumn::make('started_at')
                     ->label('Inicio')
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('No iniciado'),
+                Tables\Columns\TextColumn::make('completed_at')
+                    ->label('Finalizado')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
@@ -119,17 +141,30 @@ class InventoryCountResource extends Resource
                     ]),
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Almacén')
-                    ->relationship('warehouse', 'name')
+                    ->relationship('warehouse', 'name'),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Eliminados'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn (InventoryCount $record) => $record->status !== 'completed'),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
             ]);
     }
 

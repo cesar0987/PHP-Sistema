@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\SaleResource\Pages;
 
 use App\Filament\Resources\SaleResource;
+use App\Models\CashRegister;
 use App\Models\Sale;
-use App\Services\InventoryService;
 use App\Services\CreditService;
+use App\Services\InventoryService;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Log;
 
@@ -17,12 +19,12 @@ class CreateSale extends CreateRecord
     {
         parent::mount();
 
-        $hasOpenRegister = \App\Models\CashRegister::where('user_id', auth()->id())
+        $hasOpenRegister = CashRegister::where('user_id', auth()->id())
             ->where('status', 'open')
             ->exists();
 
         if (! $hasOpenRegister) {
-            \Filament\Notifications\Notification::make()
+            Notification::make()
                 ->title('Caja Cerrada')
                 ->body('Debe abrir una caja antes de poder realizar una venta.')
                 ->danger()

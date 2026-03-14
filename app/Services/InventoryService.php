@@ -42,7 +42,7 @@ class InventoryService
                 'quantity' => $quantity,
                 'reference_id' => $data['reference_id'] ?? null,
                 'reference_type' => $data['reference_type'] ?? null,
-                'user_id' => $data['user_id'] ?? auth()->id(),
+                'user_id' => $this->resolveUserId($data['user_id'] ?? null),
                 'notes' => $data['notes'] ?? null,
             ]);
         });
@@ -77,7 +77,7 @@ class InventoryService
                 'quantity' => -$quantity,
                 'reference_id' => $data['reference_id'] ?? null,
                 'reference_type' => $data['reference_type'] ?? null,
-                'user_id' => $data['user_id'] ?? auth()->id(),
+                'user_id' => $this->resolveUserId($data['user_id'] ?? null),
                 'notes' => $data['notes'] ?? null,
             ]);
         });
@@ -100,7 +100,7 @@ class InventoryService
             $quantityBefore = $stock->quantity;
 
             $adjustment = InventoryAdjustment::create([
-                'user_id' => $userId ?? auth()->id(),
+                'user_id' => $this->resolveUserId($userId),
                 'warehouse_id' => $warehouse->id,
                 'reason' => $reason,
                 'status' => 'approved',
@@ -123,7 +123,7 @@ class InventoryService
                 'quantity' => $difference,
                 'reference_id' => $adjustment->id,
                 'reference_type' => InventoryAdjustment::class,
-                'user_id' => $userId ?? auth()->id(),
+                'user_id' => $this->resolveUserId($userId),
                 'notes' => $reason,
             ]);
 
@@ -144,7 +144,7 @@ class InventoryService
                 $stock = $this->getOrCreateStock($item->productVariant, $adjustment->warehouse);
                 $quantityBefore = $stock->quantity;
                 $newQuantity = $item->quantity_after;
-                
+
                 // Actualizamos item quantity_before por si cambió antes de aprobarse
                 $item->update(['quantity_before' => $quantityBefore]);
 
@@ -197,7 +197,7 @@ class InventoryService
                 'quantity' => -$quantity,
                 'reference_type' => Warehouse::class,
                 'reference_id' => $toWarehouse->id,
-                'user_id' => $userId ?? auth()->id(),
+                'user_id' => $this->resolveUserId($userId),
                 'notes' => "Transferencia a {$toWarehouse->name}",
             ]);
 
@@ -211,7 +211,7 @@ class InventoryService
                 'quantity' => $quantity,
                 'reference_type' => Warehouse::class,
                 'reference_id' => $fromWarehouse->id,
-                'user_id' => $userId ?? auth()->id(),
+                'user_id' => $this->resolveUserId($userId),
                 'notes' => "Transferencia desde {$fromWarehouse->name}",
             ]);
 
@@ -282,6 +282,32 @@ class InventoryService
                 'quantity' => 0,
             ]
         );
+    }
+
+    /**
+     * Resuelve el user_id de forma segura.
+     *
+     * Prioriza el ID proporcionado explícitamente, luego intenta obtenerlo
+     * del usuario autenticado. Si ninguno está disponible, lanza una excepción
+     * clara en vez de permitir un NULL silencioso.
+     *
+     * @param  int|null  $userId  El ID de usuario proporcionado explícitamente.
+     * @return int El ID del usuario resuelto.
+     *
+     * @throws \RuntimeException Si no se puede determinar el usuario responsable.
+     */
+    protected function resolveUserId(?int $userId = null): int
+    {
+        $resolved = $userId ?? auth()->id();
+
+        if ($resolved === null) {
+            throw new \RuntimeException(
+                'No se puede determinar el usuario responsable de esta operación de inventario. '
+                .'Proporcione un user_id explícito o asegúrese de que haya un usuario autenticado.'
+            );
+        }
+
+        return $resolved;
     }
 
     /**

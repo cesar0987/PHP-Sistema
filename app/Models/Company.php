@@ -13,6 +13,7 @@ class Company extends Model
         'address',
         'phone',
         'email',
+        'logo',
         'active',
     ];
 

@@ -3,11 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\BranchScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
+#[ScopedBy([BranchScope::class])]
 class CashRegister extends Model
 {
+    use LogsActivity, SoftDeletes;
+
     protected $fillable = [
         'name',
         'branch_id',
@@ -30,6 +38,15 @@ class CashRegister extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->useLogName('caja')
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function branch(): BelongsTo

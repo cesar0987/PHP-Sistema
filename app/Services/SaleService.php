@@ -181,9 +181,9 @@ class SaleService
                 }
             }
 
-            if (!empty($payments)) {
+            if (! empty($payments)) {
                 foreach ($payments as $payment) {
-                    \App\Models\Payment::create([
+                    Payment::create([
                         'sale_id' => $sale->id,
                         'method' => $payment['method'],
                         'amount' => $payment['amount'],

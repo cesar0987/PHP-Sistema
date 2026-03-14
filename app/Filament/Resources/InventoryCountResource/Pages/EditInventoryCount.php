@@ -3,14 +3,14 @@
 namespace App\Filament\Resources\InventoryCountResource\Pages;
 
 use App\Filament\Resources\InventoryCountResource;
-use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
-
-use App\Models\InventoryCountItem;
 use App\Models\InventoryAdjustment;
+use App\Models\InventoryCountItem;
+use App\Services\InventoryService;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\DB;
 
 class EditInventoryCount extends EditRecord
@@ -48,7 +48,7 @@ class EditInventoryCount extends EditRecord
                             Forms\Components\Hidden::make('product_variant_id'),
                             Forms\Components\TextInput::make('product_name')
                                 ->label('Producto')
-                                ->formatStateUsing(fn ($record) => $record?->productVariant?->product?->name . ' - ' . $record?->productVariant?->sku)
+                                ->formatStateUsing(fn ($record) => $record?->productVariant?->product?->name.' - '.$record?->productVariant?->sku)
                                 ->disabled()
                                 ->columnSpan(3),
                             Forms\Components\TextInput::make('system_quantity')
@@ -63,8 +63,8 @@ class EditInventoryCount extends EditRecord
                                 ->disabled(fn () => $this->record->status !== 'in_progress')
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                    $sys = (int)$get('system_quantity');
-                                    $counted = (int)$state;
+                                    $sys = (int) $get('system_quantity');
+                                    $counted = (int) $state;
                                     $set('difference', $counted - $sys);
                                     $set('is_matched', $counted === $sys);
                                 })
@@ -83,8 +83,8 @@ class EditInventoryCount extends EditRecord
                         ->disableItemCreation()
                         ->disableItemDeletion()
                         ->disableItemMovement()
-                        ->defaultItems(0) // Loaded from relation
-                ])
+                        ->defaultItems(0), // Loaded from relation
+                ]),
         ]);
     }
 
@@ -101,7 +101,7 @@ class EditInventoryCount extends EditRecord
                 ->visible(fn () => $this->record->status === 'in_progress')
                 ->action(function () {
                     $this->save(); // Save form changes first
-                    
+
                     DB::transaction(function () {
                         $count = $this->record;
                         $count->status = 'completed';
@@ -110,19 +110,19 @@ class EditInventoryCount extends EditRecord
 
                         // Crear reporte de ajuste si hay diferencias
                         $hasDiff = $count->items()->where('is_matched', false)->exists();
-                        
+
                         if ($hasDiff) {
                             $adj = InventoryAdjustment::create([
                                 'warehouse_id' => $count->warehouse_id,
                                 'user_id' => auth()->id(),
-                                'reason' => "Auditoría Física #" . $count->id,
+                                'reason' => 'Auditoría Física #'.$count->id,
                                 'status' => 'approved', // Auto aprobar
                             ]);
 
-                            $service = app(\App\Services\InventoryService::class);
+                            $service = app(InventoryService::class);
 
                             foreach (InventoryCountItem::where('inventory_count_id', $count->id)->get() as $item) {
-                                if (!$item->is_matched && $item->counted_quantity !== null) {
+                                if (! $item->is_matched && $item->counted_quantity !== null) {
                                     $adj->items()->create([
                                         'product_variant_id' => $item->product_variant_id,
                                         'expected_quantity' => $item->system_quantity,
@@ -133,7 +133,7 @@ class EditInventoryCount extends EditRecord
                                         $item->productVariant,
                                         $count->warehouse,
                                         $item->counted_quantity,
-                                        "Toma Física #" . $count->id,
+                                        'Toma Física #'.$count->id,
                                         auth()->id()
                                     );
                                 }
@@ -145,7 +145,7 @@ class EditInventoryCount extends EditRecord
                         ->title('Toma finalizada con éxito.')
                         ->success()
                         ->send();
-                        
+
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
 

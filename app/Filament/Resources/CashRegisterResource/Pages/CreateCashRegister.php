@@ -11,7 +11,7 @@ class CreateCashRegister extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['name'] = 'Caja - ' . now()->format('d/m/Y H:i:s');
+        $data['name'] = 'Caja - '.now()->format('d/m/Y H:i:s');
         $data['opened_at'] = now();
         $data['status'] = 'open';
 

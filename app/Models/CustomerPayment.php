@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\CreditService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Services\CreditService;
 
 class CustomerPayment extends Model
 {
