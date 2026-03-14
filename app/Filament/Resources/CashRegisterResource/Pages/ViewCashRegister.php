@@ -14,7 +14,7 @@ class ViewCashRegister extends ViewRecord
     protected function getHeaderWidgets(): array
     {
         return [
-            CashRegisterStats::class,
+            CashRegisterStats::class ,
         ];
     }
 }

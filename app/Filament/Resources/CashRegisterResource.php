@@ -27,18 +27,50 @@ class CashRegisterResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->label('Nombre')->required()->default('Caja'),
-            Forms\Components\Select::make('branch_id')->label('Sucursal')->relationship('branch', 'name')->required(),
-            Forms\Components\Select::make('user_id')->label('Cajero')->relationship('user', 'name')->required(),
-            Forms\Components\TextInput::make('opening_amount')->label('Monto de apertura')->numeric()->default(0)->suffix('Gs'),
-            Forms\Components\TextInput::make('closing_amount')->label('Monto de cierre')->numeric()->suffix('Gs'),
-            Forms\Components\DateTimePicker::make('opened_at')->label('Fecha apertura'),
-            Forms\Components\DateTimePicker::make('closed_at')->label('Fecha cierre'),
-            Forms\Components\Select::make('status')->label('Estado')->options([
-                'open' => 'Abierta',
-                'closed' => 'Cerrada',
-            ])->default('open'),
-            Forms\Components\Textarea::make('notes')->label('Notas'),
+            Forms\Components\TextInput::make('name')
+                ->label('Nombre')
+                ->disabled()
+                ->hiddenOn('create'),
+            Forms\Components\Select::make('branch_id')
+                ->label('Sucursal')
+                ->relationship('branch', 'name')
+                ->required(),
+            Forms\Components\Select::make('user_id')
+                ->label('Cajero')
+                ->relationship('user', 'name')
+                ->required()
+                ->default(fn () => auth()->id()),
+            Forms\Components\TextInput::make('opening_amount')
+                ->label('Monto de apertura')
+                ->numeric()
+                ->default(0)
+                ->suffix('Gs')
+                ->required(),
+            Forms\Components\TextInput::make('closing_amount')
+                ->label('Monto de cierre')
+                ->numeric()
+                ->suffix('Gs')
+                ->disabled()
+                ->hiddenOn('create'),
+            Forms\Components\DateTimePicker::make('opened_at')
+                ->label('Fecha apertura')
+                ->disabled()
+                ->hiddenOn('create'),
+            Forms\Components\DateTimePicker::make('closed_at')
+                ->label('Fecha cierre')
+                ->disabled()
+                ->hiddenOn('create'),
+            Forms\Components\Select::make('status')
+                ->label('Estado')
+                ->options([
+                    'open' => 'Abierta',
+                    'closed' => 'Cerrada',
+                ])
+                ->disabled()
+                ->hiddenOn('create'),
+            Forms\Components\Textarea::make('notes')
+                ->label('Notas')
+                ->columnSpanFull(),
         ]);
     }
 
@@ -46,73 +78,79 @@ class CashRegisterResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
-                Tables\Columns\TextColumn::make('branch.name')->label('Sucursal'),
-                Tables\Columns\TextColumn::make('user.name')->label('Cajero'),
-                Tables\Columns\TextColumn::make('opening_amount')->label('Apertura')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.').' Gs'),
-                Tables\Columns\TextColumn::make('closing_amount')->label('Cierre')
-                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 0, ',', '.').' Gs' : '-'),
-                Tables\Columns\TextColumn::make('status')->label('Estado')->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'open' => 'success',
-                        'closed' => 'gray',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'open' => 'Abierta',
-                        'closed' => 'Cerrada',
-                        default => $state,
-                    }),
-                Tables\Columns\TextColumn::make('opened_at')->label('Apertura')->dateTime('d/m/Y H:i'),
-            ])
+            Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
+            Tables\Columns\TextColumn::make('branch.name')->label('Sucursal'),
+            Tables\Columns\TextColumn::make('user.name')->label('Cajero'),
+            Tables\Columns\TextColumn::make('opening_amount')->label('Apertura')
+            ->formatStateUsing(fn($state) => number_format($state, 0, ',', '.') . ' Gs'),
+            Tables\Columns\TextColumn::make('closing_amount')->label('Cierre')
+            ->formatStateUsing(fn($state) => $state ? number_format($state, 0, ',', '.') . ' Gs' : '-'),
+            Tables\Columns\TextColumn::make('status')->label('Estado')->badge()
+            ->color(fn(string $state): string => match ($state) {
+            'open' => 'success',
+            'closed' => 'gray',
+            default => 'gray',
+        })
+            ->formatStateUsing(fn(string $state): string => match ($state) {
+            'open' => 'Abierta',
+            'closed' => 'Cerrada',
+            default => $state,
+        }),
+            Tables\Columns\TextColumn::make('opened_at')->label('Apertura')->dateTime('d/m/Y H:i'),
+        ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
-                    'open' => 'Abierta',
-                    'closed' => 'Cerrada',
-                ]),
-            ])
+            Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
+                'open' => 'Abierta',
+                'closed' => 'Cerrada',
+            ]),
+        ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('cerrar')
-                    ->label('Cerrar Caja')
-                    ->icon('heroicon-o-lock-closed')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Cierre de Caja')
-                    ->modalDescription('Ingrese el efectivo físico que tiene en caja para efectuar el cierre ciego.')
-                    ->form([
-                        Forms\Components\TextInput::make('closing_amount')
-                            ->label('Efectivo Físico')
-                            ->numeric()
-                            ->required()
-                            ->prefix('Gs'),
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Observaciones')
-                            ->rows(2)
-                    ])
-                    ->action(function (\App\Models\CashRegister $record, array $data): void {
-                        $record->update([
-                            'status' => 'closed',
-                            'closed_at' => now(),
-                            'closing_amount' => $data['closing_amount'],
-                            'notes' => ltrim($record->notes . "\nCierre: " . ($data['notes'] ?? '')),
-                        ]);
-                        
-                        \Filament\Notifications\Notification::make()
-                            ->title('Caja Cerrada Exitosamente')
-                            ->success()
-                            ->send();
-                    })
-                    ->visible(fn (\App\Models\CashRegister $record): bool => $record->status === 'open'),
-            ]);
+            Tables\Actions\ViewAction::make(),
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\Action::make('cerrar')
+            ->label('Cerrar Caja')
+            ->icon('heroicon-o-lock-closed')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading('Cierre de Caja')
+            ->modalDescription('Ingrese el efectivo físico que tiene en caja para efectuar el cierre ciego.')
+            ->form([
+                Forms\Components\TextInput::make('closing_amount')
+                ->label('Efectivo Físico')
+                ->numeric()
+                ->required()
+                ->prefix('Gs'),
+                Forms\Components\Textarea::make('notes')
+                ->label('Observaciones')
+                ->rows(2)
+            ])
+            ->action(function (\App\Models\CashRegister $record, array $data): void {
+            $record->update([
+                    'status' => 'closed',
+                    'closed_at' => now(),
+                    'closing_amount' => $data['closing_amount'],
+                    'notes' => ltrim($record->notes . "\nCierre: " . ($data['notes'] ?? '')),
+                ]);
+
+            \Filament\Notifications\Notification::make()
+                ->title('Caja Cerrada Exitosamente')
+                ->success()
+                ->send();
+        })
+            ->visible(fn(\App\Models\CashRegister $record): bool => $record->status === 'open'),
+            Tables\Actions\Action::make('print')
+                ->label('Imprimir Reporte')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->url(fn (\App\Models\CashRegister $record) => route('cash-register.print', $record))
+                ->openUrlInNewTab(),
+        ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\CashRegisterResource\RelationManagers\SalesRelationManager::class,
+            \App\Filament\Resources\CashRegisterResource\RelationManagers\SalesRelationManager::class ,
         ];
     }
 
