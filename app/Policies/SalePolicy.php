@@ -24,12 +24,28 @@ class SalePolicy
 
     public function update(User $user, Sale $record): bool
     {
-        return $user->hasPermissionTo('editar_ventas');
+        if (! $user->hasPermissionTo('editar_ventas')) {
+            return false;
+        }
+
+        if ($record->document_type === 'factura') {
+            return $user->hasRole(['super_admin', 'admin']);
+        }
+
+        return true;
     }
 
     public function delete(User $user, Sale $record): bool
     {
-        return $user->hasPermissionTo('eliminar_ventas');
+        if (! $user->hasPermissionTo('eliminar_ventas')) {
+            return false;
+        }
+
+        if ($record->document_type === 'factura') {
+            return $user->hasRole(['super_admin', 'admin']);
+        }
+
+        return true;
     }
 
     public function restore(User $user, Sale $record): bool

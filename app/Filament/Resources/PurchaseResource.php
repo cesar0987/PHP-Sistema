@@ -67,7 +67,7 @@ class PurchaseResource extends Resource
                                     ->required()
                                     ->default(fn () => Warehouse::first()?->id),
                             ]),
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(4)
                             ->schema([
                                 Forms\Components\Select::make('user_id')
                                     ->label('Responsable')
@@ -87,6 +87,31 @@ class PurchaseResource extends Resource
                                     ])
                                     ->default('pending')
                                     ->required(),
+                                Forms\Components\Select::make('condition')
+                                    ->label('Condición')
+                                    ->options([
+                                        'contado' => 'Contado',
+                                        'credito' => 'Crédito',
+                                    ])
+                                    ->default('contado')
+                                    ->required(),
+                            ]),
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\TextInput::make('invoice_number')
+                                    ->label('Nro. Factura')
+                                    ->placeholder('001-001-1234567')
+                                    ->regex('/^\d{3}-\d{3}-\d{7}$/')
+                                    ->maxLength(15),
+                                Forms\Components\TextInput::make('timbrado')
+                                    ->label('Timbrado')
+                                    ->numeric()
+                                    ->length(8),
+                                Forms\Components\TextInput::make('cdc')
+                                    ->label('CDC (Factura Electrónica)')
+                                    ->numeric()
+                                    ->length(44)
+                                    ->columnSpan(2),
                             ]),
                     ]),
 
@@ -243,6 +268,13 @@ class PurchaseResource extends Resource
                     ->label('Sucursal'),
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Almacen'),
+                Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('Factura')
+                    ->searchable()
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('condition')
+                    ->label('Condición')
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
                 Tables\Columns\TextColumn::make('items_count')
                     ->label('Productos')
                     ->counts('items')
@@ -293,6 +325,20 @@ class PurchaseResource extends Resource
                     ->label('Eliminados'),
             ])
             ->actions([
+                Tables\Actions\Action::make('imprimir')
+                    ->label('Imprimir')
+                    ->icon('heroicon-o-printer')
+                    ->color('info')
+                    ->action(function (Purchase $record) {
+                        $receiptService = app(\App\Services\ReceiptService::class);
+                        $receipt = $record->receipts()->where('type', 'purchase_ticket')->first();
+                        if (!$receipt) {
+                            $receipt = $receiptService->generateReceipt($record, 'purchase_ticket');
+                        }
+                        return response()->streamDownload(function () use ($receiptService, $receipt, $record) {
+                            echo $receiptService->generatePdf($record, $receipt, 'purchase_ticket')->output();
+                        }, "compra_{$receipt->number}.pdf");
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\RestoreAction::make(),

@@ -12,8 +12,14 @@ class ListSales extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $hasOpenRegister = \App\Models\CashRegister::where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->exists();
+
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->disabled(! $hasOpenRegister)
+                ->tooltip(fn () => ! $hasOpenRegister ? 'Debe tener una caja abierta para crear una venta' : null),
         ];
     }
 }

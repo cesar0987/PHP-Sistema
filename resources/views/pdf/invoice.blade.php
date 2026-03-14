@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Factura #{{ $receipt->number }}</title>
+    <title>Factura #{{ $sale->invoice_number ?? $receipt->number }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; font-size: 11px; width: 210mm; margin: 0 auto; padding: 15mm 20mm; color: #333; }

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ticket #{{ $receipt->number }}</title>
+    <title>Compra #{{ $receipt->number }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Courier New', monospace; font-size: 11px; width: 80mm; margin: 0 auto; padding: 8px; }
@@ -17,22 +17,18 @@
 </head>
 <body>
     <div class="header text-center">
-        <div class="empresa">TERRACOTA</div>
-        <div class="empresa" style="font-size: 10px;">CONSTRUCCIONES</div>
-        <div style="font-size: 9px; margin-top: 3px;">Materiales y Ferreteria</div>
-        <div style="font-size: 9px;">RUC: {{ $company->ruc ?? '-' }}</div>
-        <div style="font-size: 9px;">{{ $company->address ?? '' }}</div>
-        <div style="font-size: 9px;">Tel: {{ $company->phone ?? '' }}</div>
+        <div class="empresa">Comprobante de Ingreso (Compra)</div>
+        <div style="font-size: 9px; margin-top: 3px;">{{ $company->name ?? 'Ferreteria' }}</div>
     </div>
 
     <div class="separator"></div>
 
     <div>
-        <div>Ticket #: {{ $sale->invoice_number ?? $receipt->number }}</div>
-        <div>Fecha: {{ $sale->sale_date->format('d/m/Y H:i') }}</div>
-        <div>Vendedor: {{ $sale->user->name }}</div>
-        @if($sale->customer)
-        <div>Cliente: {{ $sale->customer->name }}</div>
+        <div>Ticket/Doc #: {{ $purchase->invoice_number ?? $receipt->number }}</div>
+        <div>Fecha: {{ $purchase->purchase_date->format('d/m/Y') }}</div>
+        <div>Responsable: {{ $purchase->user->name }}</div>
+        @if($purchase->supplier)
+        <div>Proveedor: {{ $purchase->supplier->name }}</div>
         @endif
     </div>
 
@@ -43,11 +39,11 @@
             <tr>
                 <th style="text-align: left;">Cant</th>
                 <th style="text-align: left;">Producto</th>
-                <th class="text-right">Importe</th>
+                <th class="text-right">Costo</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($sale->items as $item)
+            @foreach($purchase->items as $item)
             <tr>
                 <td>{{ $item->quantity }}</td>
                 <td>{{ $item->productVariant->product->name }}</td>
@@ -60,29 +56,22 @@
     <div class="separator"></div>
 
     <div>
-        <div class="text-right">Subtotal: {{ number_format($sale->subtotal, 0, ',', '.') }} Gs</div>
-        @if($sale->discount > 0)
-        <div class="text-right">Descuento: -{{ number_format($sale->discount, 0, ',', '.') }} Gs</div>
-        @endif
-        @if($sale->tax > 0)
-        <div class="text-right">IVA: {{ number_format($sale->tax, 0, ',', '.') }} Gs</div>
-        @endif
-        <div class="text-right bold" style="font-size: 13px;">TOTAL: {{ number_format($sale->total, 0, ',', '.') }} Gs</div>
+        <div class="text-right bold" style="font-size: 13px;">TOTAL: {{ number_format($purchase->total, 0, ',', '.') }} Gs</div>
     </div>
 
     <div class="separator"></div>
 
     <div class="text-center" style="margin-top: 8px;">
-        <p class="bold">Gracias por su compra!</p>
-        <p style="font-size: 8px;">{{ now()->format('d/m/Y H:i:s') }}</p>
+        <p class="bold">COMPRA REGISTRADA EN SISTEMA</p>
+        <p style="font-size: 8px;">Impreso el {{ now()->format('d/m/Y H:i:s') }}</p>
         
         @if(class_exists('\SimpleSoftwareIO\QrCode\Facades\QrCode'))
             @php
-                $qrData = "Comprobante: " . $receipt->number . " | Total: " . number_format($sale->total, 0, '', '') . " Gs | Fecha: " . $sale->sale_date->format('Y-m-d');
+                $qrData = "Compra: " . $receipt->number . " | Total: " . number_format($purchase->total, 0, '', '') . " Gs | Fecha: " . $purchase->purchase_date->format('Y-m-d');
             @endphp
             <div style="margin-top: 10px;">
                 <img src="data:image/png;base64, {!! base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(80)->generate($qrData)) !!} ">
-                <div style="font-size: 8px; margin-top: 2px;">Escanear para verificar</div>
+                <div style="font-size: 8px; margin-top: 2px;">Escanear recibo</div>
             </div>
         @endif
     </div>

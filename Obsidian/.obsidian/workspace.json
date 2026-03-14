@@ -11,10 +11,14 @@
             "id": "f90bba54a148e6ee",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vista gráfica"
+              "type": "markdown",
+              "state": {
+                "file": "Plan_Fix_Receipt_Purchase.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Plan_Fix_Receipt_Purchase"
             }
           }
         ]
@@ -191,8 +195,13 @@
   },
   "active": "f90bba54a148e6ee",
   "lastOpenFiles": [
-    "Plan de Desarrollo Sisteme Ferreteria.md",
+    "Plan_Flujo_Caja.md",
+    "Plan_Plantillas_Impresion.md",
+    "Sin título.canvas",
+    "Plan_Sifen_Fiscalizacion_Inventario.md",
     "Mejoras del sistema — POS Ferretería.md",
+    "guia_mejores_practicas_envio_de.md",
+    "Plan de Desarrollo Sisteme Ferreteria.md",
     "create a link.md"
   ]
 }

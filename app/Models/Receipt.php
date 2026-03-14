@@ -9,6 +9,7 @@ class Receipt extends Model
 {
     protected $fillable = [
         'sale_id',
+        'purchase_id',
         'type',
         'number',
         'generated_at',
@@ -27,5 +28,10 @@ class Receipt extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
     }
 }

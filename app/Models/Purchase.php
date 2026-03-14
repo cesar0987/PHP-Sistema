@@ -23,6 +23,10 @@ class Purchase extends Model
         'discount',
         'tax',
         'status',
+        'invoice_number',
+        'timbrado',
+        'cdc',
+        'condition',
         'purchase_date',
         'notes',
     ];
@@ -71,5 +75,10 @@ class Purchase extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class);
     }
 }

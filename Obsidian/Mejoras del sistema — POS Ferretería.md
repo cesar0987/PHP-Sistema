@@ -8,14 +8,14 @@
 
 ## Progreso general
 
-| Área | Items | Estado |
-|---|---|---|
-| Seguridad y auditoría | 10 | ✅✅⬜⬜✅⬜⬜✅✅✅ |
-| Performance y escalabilidad | 10 | ✅⬜✅✅✅⬜⬜⬜⬜✅ |
-| Experiencia de usuario (UX) | 10 | ⬜⬜⬜⬜✅✅✅⬜⬜✅ |
-| Integraciones externas | 9 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| Testing y calidad | 10 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| Documentación | 9 | ✅✅⬜⬜⬜⬜⬜⬜⬜ |
+| Área                        | Items | Estado     |
+| --------------------------- | ----- | ---------- |
+| Seguridad y auditoría       | 10    | ✅✅⬜⬜✅⬜⬜✅✅✅ |
+| Performance y escalabilidad | 10    | ✅⬜✅✅✅⬜⬜⬜⬜✅ |
+| Experiencia de usuario (UX) | 10    | ⬜⬜⬜⬜✅✅✅⬜⬜✅ |
+| Integraciones externas      | 9     | ⬜⬜⬜⬜⬜⬜⬜⬜⬜  |
+| Testing y calidad           | 10    | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| Documentación               | 9     | ✅✅⬜⬜⬜⬜⬜⬜⬜  |
 
 ---
 

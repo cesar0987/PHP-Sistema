@@ -84,10 +84,63 @@ class SaleResource extends Resource
                                     ])
                                     ->default('completed')
                                     ->required(),
+                                Forms\Components\Select::make('condition')
+                                    ->label('Condición')
+                                    ->options([
+                                        'contado' => 'Contado',
+                                        'credito' => 'Crédito',
+                                    ])
+                                    ->default('contado')
+                                    ->required(),
+                                Forms\Components\Select::make('document_type')
+                                    ->label('Tipo de Documento')
+                                    ->options([
+                                        'ticket' => 'Ticket (Interno)',
+                                        'invoice' => 'Factura (SIFEN/Legal)',
+                                    ])
+                                    ->default('ticket')
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, $state) {
+                                        if ($state === 'ticket') {
+                                            $set('invoice_number', 'TCK-' . strtoupper(substr(uniqid(), -6)));
+                                            $set('timbrado', null);
+                                            $set('cdc', null);
+                                        } else {
+                                            $set('invoice_number', null);
+                                        }
+                                    })
+                                    ->required(),
+                            ]),
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\TextInput::make('invoice_number')
+                                    ->label('Nro. Documento / Factura')
+                                    ->placeholder(fn (Get $get) => $get('document_type') === 'invoice' ? '001-001-1234567' : 'TCK-XXXXX')
+                                    ->regex(fn (Get $get) => $get('document_type') === 'invoice' ? '/^\d{3}-\d{3}-\d{7}$/' : null)
+                                    ->default(fn() => 'TCK-' . strtoupper(substr(uniqid(), -6)))
+                                    ->maxLength(15)
+                                    ->required(),
+                                Forms\Components\TextInput::make('timbrado')
+                                    ->label('Timbrado')
+                                    ->numeric()
+                                    ->length(8)
+                                    ->visible(fn (Get $get) => $get('document_type') === 'invoice'),
+                                Forms\Components\TextInput::make('cdc')
+                                    ->label('CDC (Factura Electrónica)')
+                                    ->numeric()
+                                    ->length(44)
+                                    ->columnSpan(2)
+                                    ->visible(fn (Get $get) => $get('document_type') === 'invoice'),
+                            ]),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
                                 Forms\Components\Select::make('cash_register_id')
                                     ->label('Caja')
                                     ->relationship('cashRegister', 'name')
-                                    ->placeholder('Sin caja'),
+                                    ->default(fn () => \App\Models\CashRegister::where('user_id', auth()->id())->where('status', 'open')->first()?->id)
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated(),
                                 Forms\Components\Toggle::make('is_b2b')
                                     ->label('Precios B2B (Sin IVA)')
                                     ->dehydrated(false)
@@ -212,6 +265,7 @@ class SaleResource extends Resource
                                                 $set('subtotal', ($price * $qty) - $discount);
                                             }
                                         }
+                                        self::updateTotals($get, $set);
                                     })
                                     ->columnSpan(4),
                                 Forms\Components\TextInput::make('quantity')
@@ -226,6 +280,7 @@ class SaleResource extends Resource
                                         $qty = (int) ($get('quantity') ?: 1);
                                         $discount = (float) ($get('discount') ?: 0);
                                         $set('subtotal', ($price * $qty) - $discount);
+                                        self::updateTotals($get, $set);
                                     })
                                     ->columnSpan(1),
                                 Forms\Components\TextInput::make('price')
@@ -240,6 +295,7 @@ class SaleResource extends Resource
                                         $qty = (int) ($get('quantity') ?: 1);
                                         $discount = (float) ($get('discount') ?: 0);
                                         $set('subtotal', ($price * $qty) - $discount);
+                                        self::updateTotals($get, $set);
                                     })
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('discount')
@@ -253,6 +309,7 @@ class SaleResource extends Resource
                                         $qty = (int) ($get('quantity') ?: 1);
                                         $discount = (float) ($get('discount') ?: 0);
                                         $set('subtotal', ($price * $qty) - $discount);
+                                        self::updateTotals($get, $set);
                                     })
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('subtotal')
@@ -321,7 +378,9 @@ class SaleResource extends Resource
 
     public static function updateTotals(Get $get, Set $set): void
     {
-        $items = $get('items') ?? [];
+        // Detect if we are inside the repeater ('../../items') or at the root ('items')
+        $isInsideRepeater = $get('../../items') !== null;
+        $items = $isInsideRepeater ? $get('../../items') : ($get('items') ?? []);
 
         $subtotal = 0;
         $tax = 0;
@@ -340,12 +399,18 @@ class SaleResource extends Resource
             }
         }
 
-        $discount = (float) ($get('discount') ?: 0);
+        $discount = (float) ($isInsideRepeater ? $get('../../discount') : $get('discount')) ?: 0;
         $total = $subtotal - $discount + $tax;
 
-        $set('subtotal', round($subtotal));
-        $set('tax', round($tax));
-        $set('total', round($total));
+        if ($isInsideRepeater) {
+            $set('../../subtotal', round($subtotal));
+            $set('../../tax', round($tax));
+            $set('../../total', round($total));
+        } else {
+            $set('subtotal', round($subtotal));
+            $set('tax', round($tax));
+            $set('total', round($total));
+        }
     }
 
     public static function table(Table $table): Table
@@ -397,6 +462,18 @@ class SaleResource extends Resource
                         'returned' => 'Devuelto',
                         default => $state,
                     }),
+                Tables\Columns\TextColumn::make('document_type')
+                    ->label('Documento')
+                    ->formatStateUsing(fn ($state) => $state === 'invoice' ? 'Factura' : 'Ticket')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'invoice' ? 'info' : 'gray'),
+                Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('Nro.')
+                    ->searchable()
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('condition')
+                    ->label('Condición')
+                    ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
                 Tables\Columns\TextColumn::make('sale_date')
                     ->label('Fecha')
                     ->dateTime('d/m/Y H:i')

@@ -12,6 +12,25 @@ class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        $hasOpenRegister = \App\Models\CashRegister::where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->exists();
+
+        if (! $hasOpenRegister) {
+            \Filament\Notifications\Notification::make()
+                ->title('Caja Cerrada')
+                ->body('Debe abrir una caja antes de poder realizar una venta.')
+                ->danger()
+                ->send();
+
+            $this->redirect($this->getResource()::getUrl('index'));
+        }
+    }
+
     protected function afterCreate(): void
     {
         /** @var Sale $sale */

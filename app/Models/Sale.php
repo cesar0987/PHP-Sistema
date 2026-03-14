@@ -40,6 +40,11 @@ class Sale extends Model
         'tax',
         'total',
         'status',
+        'invoice_number',
+        'timbrado',
+        'cdc',
+        'document_type',
+        'condition',
         'sale_date',
         'notes',
         'cancellation_reason',
@@ -97,8 +102,8 @@ class Sale extends Model
         return $this->hasMany(Payment::class);
     }
 
-    public function receipt(): BelongsTo
+    public function receipts(): HasMany
     {
-        return $this->belongsTo(Receipt::class);
+        return $this->hasMany(Receipt::class);
     }
 }

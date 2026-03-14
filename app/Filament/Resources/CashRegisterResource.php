@@ -73,8 +73,47 @@ class CashRegisterResource extends Resource
                 ]),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('cerrar')
+                    ->label('Cerrar Caja')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cierre de Caja')
+                    ->modalDescription('Ingrese el efectivo físico que tiene en caja para efectuar el cierre ciego.')
+                    ->form([
+                        Forms\Components\TextInput::make('closing_amount')
+                            ->label('Efectivo Físico')
+                            ->numeric()
+                            ->required()
+                            ->prefix('Gs'),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Observaciones')
+                            ->rows(2)
+                    ])
+                    ->action(function (\App\Models\CashRegister $record, array $data): void {
+                        $record->update([
+                            'status' => 'closed',
+                            'closed_at' => now(),
+                            'closing_amount' => $data['closing_amount'],
+                            'notes' => ltrim($record->notes . "\nCierre: " . ($data['notes'] ?? '')),
+                        ]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Caja Cerrada Exitosamente')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn (\App\Models\CashRegister $record): bool => $record->status === 'open'),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\CashRegisterResource\RelationManagers\SalesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -82,6 +121,7 @@ class CashRegisterResource extends Resource
         return [
             'index' => ListCashRegisters::route('/'),
             'create' => CreateCashRegister::route('/create'),
+            'view' => \App\Filament\Resources\CashRegisterResource\Pages\ViewCashRegister::route('/{record}'),
             'edit' => EditCashRegister::route('/{record}/edit'),
         ];
     }

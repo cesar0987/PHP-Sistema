@@ -1,32 +1,54 @@
-# Manual de Operaciones: Módulo de Inventario
+# Manual de Operaciones Global del Sistema POS
 
-Esta guía explica a nivel técnico y operativo cómo funciona la gestión de Stock en este Sistema POS.
+Este manual explica a nivel técnico y operativo cómo funciona todo el ecosistema del sistema POS, enfocado actualmente en las operaciones de una Ferretería, garantizando seguridad, trazabilidad y cumplimiento fiscal (SIFEN).
 
-## 1. Regla de Oro del Inventario
-**El sistema está diseñado bajo Arquitectura Limpia.** Esto significa que **el stock JAMÁS se edita a mano** cambiando un número en la vista de `Stock`.
-Si un producto tiene `0` de stock, o no aparece en la tabla de stock, **está bien**. El sistema requiere que el inventario se modifique mediante *transacciones reales* que dejen rastro y puedan ser auditadas por la gerencia.
+---
 
-## 2. ¿Cómo ingreso mercadería al sistema?
-Existen dos formas principales:
-- **Módulo de Compras:** Cuando le compras mercadería a un Proveedor, al registrar la compra y darle a "Recibir Productos", el sistema automáticamente:
-  1. Aumentará el stock disponible en la sucursal seleccionada.
-  2. Dejará un registro contable de la compra.
-  3. Dejará un registro en el historial de **Movimientos de Stock** (indicando que la causa fue una compra).
+## 1. Módulo de Cajas (Flujo de Caja)
+El sistema opera bajo un modelo de estricto control de flujo de ingresos. 
+- **Apertura Obligatoria:** Ningún vendedor puede registrar una venta si no tiene una Caja Abierta asignada a su turno.
+- **Asignación Automática:** Toda venta realizada se vinculará transparente y permanentemente a la caja que el usuario tenga abierta en ese momento.
+- **Cierre Ciego:** Al culminar el turno, el cajero debe ir a la vista de su Caja y seleccionar **"Cerrar Caja"**. Se le pedirá que declare el **efectivo físico** que tiene en posesión. El sistema cruza esta información con las ventas registradas y el monto de apertura, dejando el registro para auditoría gerencial sin revelarle cálculos previos al cajero.
+- **Auditoría:** En la vista detallada de la caja, el supervisor puede ver un dashboard con el desglose del monto de apertura, ventas esperadas, y el historial de cada ticket/factura emitidos en la sesión.
 
-- **Ajustes de Inventario:** Si estás migrando al sistema por primera vez (Inventario Inicial) o encontraste mercadería perdida/sobrante, debes ir a **Ajustes de Inventario**.
-  1. Creas un nuevo Ajuste, seleccionando la sucursal y el motivo (ej. "Inventario Inicial 2024" o "Mercadería encontrada en fondo").
-  2. Agregas en la lista los productos y la cantidad real que contaste físicamente.
-  3. Lo guardas con el estado **Aprobado**.
-  4. El sistema actualizará el stock a la cantidad introducida y creará un historial para la auditoría indicando quién lo aprobó.
+---
 
-## 3. ¿Cómo sale la mercadería?
-- **Ventas (POS):** Es el flujo natural. Al aprobar y cobrar una venta, el sistema descuenta automáticamente las unidades de la sucursal indicada y no permite vender por debajo del límite a menos que sea una sobreventa controlada.
-- **Ajustes por Merma / Robo:** Nuevamente, vas a **Ajustes de Inventario**, ingresas los productos afectados, y en "Nuevo Stock" pones la cantidad menor que confirmaste. El sistema calculará la diferencia negativa y registrará la merma.
+## 2. Módulo de Ventas y Facturación
+El Punto de Venta (POS) está diseñado para operar con rapidez, sin perder control fiscal:
+- **Tipos de Documento:** Al realizar la venta, se debe elegir entre `Ticket` (comprobante interno) y `Factura` (comprobante con validez legal/fiscal SIFEN).
+- **Control SIFEN:** Si se escoge `Factura`, el sistema validará que se introduzcan datos fiscales obligatorios como el Timbrado, el patrón estricto del Número de Factura (`001-001-XXXXXXX`), y en caso de ser electrónica, su código CDC.
+- **Protección Antifraude:** Los vendedores comunes **tienen prohibido** editar o borrar una `Factura` una vez emitida. Esta es una tarea exclusiva de los usuarios con rol de **Administrador**.
+- **Impresión:** Al culminar la venta, se genera automáticamente un PDF con diseño moderno (Ticket de 80mm).
 
-## 4. ¿Por qué la vista "Stock" es de solo lectura?
-La vista `Stock` que encuentras en el menú es simplemente un "Visualizador" (visor o reporte rápido). Evita que los usuarios manipulen cantidades directas (que podrían ocultar robos) imponiendo que todas las modificaciones dejen un registro indeleble en la actividad de la base de datos.
+---
 
-## Resumen de Tablas
-- `stocks`: Guarda la fotografía actual del stock (Cantidades vigentes en el momento).
-- `stock_movements`: El Libro Diario del almacén. Guarda qué subió y bajó el stock, cuándo y por qué (compras, ventas o ajustes).
-- `inventory_adjustments`: Archivos de expedientes de por qué se cambió el stock a mano.
+## 3. Módulo de Inventario (Regla de Oro)
+**El sistema está diseñado bajo Arquitectura Limpia.** Esto significa que **el stock JAMÁS se edita a mano** (por ejemplo, cambiando directamente un simple número). Toda modificación de inventario debe dejar un rastro contable.
+
+### ¿Cómo ingresa/sale la mercadería del sistema?
+1. **Compras a Proveedores:** Al registrar una Compra, el stock aumenta automáticamente basándose en los productos comprados. Además, ahora estas compras se rigen por normativa SIFEN (requiriendo timbrados) y emiten su propio "Comprobante de Recepción" impreso en formato ticket.
+2. **Ventas:** El stock de los productos se descuenta al instante en la sucursal asignada cuando se completa una Venta.
+3. **Ajustes de Inventario:** Utilizados para ingresar stock inicial, pérdidas o roturas. El ajuste genera un movimiento de auditoría reflejando qué cambió y quién lo aprobó.
+
+### Fiscalización: Tomas Físicas (Conteo de Inventario)
+Para el control periódico del almacén, contamos con los **Inventarios Físicos**:
+- Entras al módulo de **Tomas Físicas (Inventory Counts)** y creas un lote para una sucursal y empleado encargado.
+- En la cuadrícula interactiva, el empleado registra la **"Cantidad Contada"** físicamente en la estantería.
+- El sistema muestra una columna con la **"Diferencia"** calculada de forma reactiva (ideal para identificar faltantes/sobrantes ocultos).
+- Al **"Completar"** y cerrar el conteo, el sistema consolida automáticamente esos reportes en *Ajustes de Inventario* aprobados, cuadrando la diferencia de la base de datos con la realidad.
+
+---
+
+## 4. Diseño y Flexibilidad: Plantillas de Impresión
+- Los comprobantes no están estáticos ni "quemados" en el código.
+- Los administradores tienen acceso a la sección de **"Plantillas de Recibo"**.
+- Desde un panel web, sin conocimientos previos de programación backend, pueden editar el **HTML y CSS** de la plantilla del Ticket o Factura, inyectando variables dinámicas y viendo en tiempo real cómo cambia su logo corporativo, los agradecimientos, tipografías y ordenamiento visual de sus sucursales.
+
+---
+
+## Resumen Lógico
+Toda acción deja un rastro:
+- **`cash_registers`** registra y audita el dinero manejado.
+- **`sales` y `purchases`** inyectan obligaciones financieras e impactan al stock.
+- **`stock_movements`** detalla un "Libro Diario" exhaustivo de por qué se movió la mercadería en los estantes. 
+- **`receipt_templates`** libera a los dueños a moldear la imagen estética final entregada al consumidor.
