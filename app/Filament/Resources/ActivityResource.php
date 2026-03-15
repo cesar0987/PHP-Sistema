@@ -42,6 +42,12 @@ class ActivityResource extends Resource
         return false;
     }
 
+    public static function canViewAny(): bool
+    {
+        // Solo administradores pueden ver los registros de actividad
+        return config('app.env') === 'local' || auth()->user()?->hasRole(['super_admin', 'admin']);
+    }
+
     /**
      * Mapa de log_name → nombre legible en español.
      */

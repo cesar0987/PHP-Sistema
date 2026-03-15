@@ -28,7 +28,7 @@ class SalePolicy
             return false;
         }
 
-        if ($record->document_type === 'factura') {
+        if ($record->document_type === 'invoice') {
             return $user->hasRole(['super_admin', 'admin']);
         }
 
@@ -41,7 +41,7 @@ class SalePolicy
             return false;
         }
 
-        if ($record->document_type === 'factura') {
+        if ($record->document_type === 'invoice') {
             return $user->hasRole(['super_admin', 'admin']);
         }
 

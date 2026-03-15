@@ -83,11 +83,15 @@ class ProductResource extends Resource
                                     ->suffix('Gs')
                                     ->gte('cost_price')
                                     ->helperText('No debe ser menor al costo.'),
-                                Forms\Components\TextInput::make('tax_percentage')
+                                Forms\Components\Select::make('tax_percentage')
                                     ->label('IVA %')
-                                    ->numeric()
+                                    ->options([
+                                        0 => 'Exento (0%)',
+                                        5 => 'IVA 5%',
+                                        10 => 'IVA 10%',
+                                    ])
                                     ->default(10)
-                                    ->suffix('%'),
+                                    ->required(),
                             ]),
                     ]),
                 Forms\Components\Toggle::make('active')

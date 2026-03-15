@@ -12,6 +12,8 @@ class PurchaseItem extends Model
         'product_variant_id',
         'quantity',
         'cost',
+        'tax_percentage',
+        'tax_amount',
         'subtotal',
     ];
 

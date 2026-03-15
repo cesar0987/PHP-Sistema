@@ -87,7 +87,7 @@ class PurchaseResource extends Resource
                                         'received' => 'Recibido',
                                         'cancelled' => 'Cancelado',
                                     ])
-                                    ->default('pending')
+                                    ->default('received')
                                     ->required(),
                                 Forms\Components\Select::make('condition')
                                     ->label('Condición')
@@ -123,6 +123,8 @@ class PurchaseResource extends Resource
                         Forms\Components\Repeater::make('items')
                             ->label('')
                             ->relationship()
+                            ->dehydrated()
+                            ->disabled(fn (?Purchase $record) => $record?->status === 'received' && $record->exists)
                             ->schema([
                                 Forms\Components\Select::make('product_variant_id')
                                     ->label('Producto')
@@ -148,6 +150,7 @@ class PurchaseResource extends Resource
                                                 $set('cost', (float) $cost);
                                                 $qty = $get('quantity') ?: 1;
                                                 $set('subtotal', (float) $cost * (int) $qty);
+                                                $set('tax_percentage', $variant->product->tax_percentage ?? 10);
                                             }
                                         }
                                     })
@@ -185,6 +188,8 @@ class PurchaseResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly()
                                     ->columnSpan(2),
+                                Forms\Components\Hidden::make('tax_percentage')
+                                    ->default(10),
                             ])
                             ->columns(11)
                             ->addActionLabel('Agregar producto')
@@ -202,17 +207,39 @@ class PurchaseResource extends Resource
                 // --- Totals ---
                 Forms\Components\Section::make('Totales')
                     ->schema([
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(3)
                             ->schema([
-                                Forms\Components\Placeholder::make('items_summary')
-                                    ->label('Productos')
-                                    ->content(function (Get $get) {
-                                        $items = $get('items') ?? [];
-
-                                        return count(array_filter($items, fn ($i) => ! empty($i['product_variant_id']))).' producto(s)';
-                                    }),
+                                Forms\Components\TextInput::make('subtotal_exenta')
+                                    ->label('Gravadas Exentas')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('subtotal_5')
+                                    ->label('Gravadas 5%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('subtotal_10')
+                                    ->label('Gravadas 10%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                            ]),
+                        Forms\Components\Grid::make([
+                            'default' => 5,
+                        ])
+                            ->schema([
+                                Forms\Components\TextInput::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
                                 Forms\Components\TextInput::make('discount')
-                                    ->label('Descuento general')
+                                    ->label('Descuento Gral.')
                                     ->numeric()
                                     ->default(0)
                                     ->suffix('Gs')
@@ -220,8 +247,14 @@ class PurchaseResource extends Resource
                                     ->afterStateUpdated(function (Get $get, Set $set) {
                                         self::updateTotals($get, $set);
                                     }),
-                                Forms\Components\TextInput::make('tax')
-                                    ->label('Impuesto')
+                                Forms\Components\TextInput::make('tax_5')
+                                    ->label('Liq. IVA 5%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('tax_10')
+                                    ->label('Liq. IVA 10%')
                                     ->numeric()
                                     ->default(0)
                                     ->suffix('Gs')
@@ -233,8 +266,10 @@ class PurchaseResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly(),
                             ]),
+                        Forms\Components\Hidden::make('tax'),
                         Forms\Components\Textarea::make('notes')
                             ->label('Notas')
+                            ->columnSpanFull()
                             ->rows(2),
                     ]),
             ]);
@@ -242,18 +277,67 @@ class PurchaseResource extends Resource
 
     public static function updateTotals(Get $get, Set $set): void
     {
-        $items = $get('items') ?? [];
+        $isInsideRepeater = $get('../../items') !== null;
+        $items = $isInsideRepeater ? $get('../../items') : ($get('items') ?? []);
 
         $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += (float) ($item['subtotal'] ?? 0);
+        $subtotal_exenta = 0;
+        $subtotal_5 = 0;
+        $subtotal_10 = 0;
+        
+        $tax_5 = 0;
+        $tax_10 = 0;
+
+        foreach ($items as $key => $item) {
+            $itemSubtotal = (float) ($item['subtotal'] ?? 0);
+            $subtotal += $itemSubtotal;
+
+            $taxPercent = (float) ($item['tax_percentage'] ?? 10);
+            $itemTax = 0;
+
+            if ($taxPercent == 10) {
+                $subtotal_10 += $itemSubtotal;
+                $itemTax = $itemSubtotal / 11;
+                $tax_10 += $itemTax;
+            } elseif ($taxPercent == 5) {
+                $subtotal_5 += $itemSubtotal;
+                $itemTax = $itemSubtotal / 21;
+                $tax_5 += $itemTax;
+            } else {
+                $subtotal_exenta += $itemSubtotal;
+            }
+            
+            if ($isInsideRepeater) {
+                 $set('../../items.' . $key . '.tax_amount', round($itemTax, 2));
+                 $set('../../items.' . $key . '.subtotal', round($itemSubtotal, 2));
+            } else {
+                 $set('items.' . $key . '.tax_amount', round($itemTax, 2));
+                 $set('items.' . $key . '.subtotal', round($itemSubtotal, 2));
+            }
         }
 
-        $discount = (float) ($get('discount') ?: 0);
-        $tax = (float) ($get('tax') ?: 0);
-        $total = $subtotal - $discount + $tax;
+        $discount = (float) ($isInsideRepeater ? $get('../../discount') : $get('discount')) ?: 0;
+        $total = $subtotal - $discount;
 
-        $set('total', round($total));
+        if ($isInsideRepeater) {
+            $set('../../subtotal', round($subtotal));
+            $set('../../subtotal_exenta', round($subtotal_exenta));
+            $set('../../subtotal_5', round($subtotal_5));
+            $set('../../subtotal_10', round($subtotal_10));
+            $set('../../tax_5', round($tax_5));
+            $set('../../tax_10', round($tax_10));
+            $set('../../tax', round($tax_5 + $tax_10));
+            $set('../../total', round($total));
+        } else {
+            $set('subtotal', round($subtotal));
+            $set('subtotal_exenta', round($subtotal_exenta));
+            $set('subtotal_5', round($subtotal_5));
+            $set('subtotal_10', round($subtotal_10));
+            $set('tax_5', round($tax_5));
+            $set('tax_10', round($tax_10));
+            $set('tax', round($tax_5 + $tax_10));
+            $set('total', round($total));
+        }
     }
 
     public static function table(Table $table): Table

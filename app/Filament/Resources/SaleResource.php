@@ -222,6 +222,7 @@ class SaleResource extends Resource
                                         'price' => $get('is_b2b') ? ($price / 1.1) : $price,
                                         'discount' => 0,
                                         'subtotal' => $get('is_b2b') ? ($price / 1.1) : $price,
+                                        'tax_percentage' => $variant->product->tax_percentage ?? 10,
                                     ];
                                 }
 
@@ -267,6 +268,7 @@ class SaleResource extends Resource
                                                 $qty = $get('quantity') ?: 1;
                                                 $discount = $get('discount') ?: 0;
                                                 $set('subtotal', ($price * $qty) - $discount);
+                                                $set('tax_percentage', $variant->product->tax_percentage ?? 10);
                                             }
                                         }
                                         self::updateTotals($get, $set);
@@ -339,6 +341,8 @@ class SaleResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly()
                                     ->columnSpan(2),
+                                Forms\Components\Hidden::make('tax_percentage')
+                                    ->default(10),
                             ])
                             ->columns(11)
                             ->addActionLabel('Agregar producto')
@@ -356,7 +360,30 @@ class SaleResource extends Resource
                 // --- Totals ---
                 Forms\Components\Section::make('Totales')
                     ->schema([
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('subtotal_exenta')
+                                    ->label('Gravadas Exentas')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('subtotal_5')
+                                    ->label('Gravadas 5%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('subtotal_10')
+                                    ->label('Gravadas 10%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                            ]),
+                        Forms\Components\Grid::make([
+                            'default' => 5,
+                        ])
                             ->schema([
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
@@ -365,19 +392,22 @@ class SaleResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly(),
                                 Forms\Components\TextInput::make('discount')
-                                    ->label('Descuento general')
+                                    ->label('Descuento Gral.')
                                     ->numeric()
                                     ->default(0)
                                     ->suffix('Gs')
                                     ->reactive()
                                     ->afterStateUpdated(function (Get $get, Set $set) {
-                                        $subtotal = (float) ($get('subtotal') ?: 0);
-                                        $discount = (float) ($get('discount') ?: 0);
-                                        $tax = (float) ($get('tax') ?: 0);
-                                        $set('total', $subtotal - $discount + $tax);
+                                        self::updateTotals($get, $set);
                                     }),
-                                Forms\Components\TextInput::make('tax')
-                                    ->label('Impuesto')
+                                Forms\Components\TextInput::make('tax_5')
+                                    ->label('Liq. IVA 5%')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('Gs')
+                                    ->readOnly(),
+                                Forms\Components\TextInput::make('tax_10')
+                                    ->label('Liq. IVA 10%')
                                     ->numeric()
                                     ->default(0)
                                     ->suffix('Gs')
@@ -389,8 +419,10 @@ class SaleResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly(),
                             ]),
+                        Forms\Components\Hidden::make('tax'),
                         Forms\Components\Textarea::make('notes')
                             ->label('Notas')
+                            ->columnSpanFull()
                             ->rows(2),
                     ]),
             ]);
@@ -403,32 +435,62 @@ class SaleResource extends Resource
         $items = $isInsideRepeater ? $get('../../items') : ($get('items') ?? []);
 
         $subtotal = 0;
-        $tax = 0;
+        $subtotal_exenta = 0;
+        $subtotal_5 = 0;
+        $subtotal_10 = 0;
+        
+        $tax_5 = 0;
+        $tax_10 = 0;
 
-        foreach ($items as $item) {
+        foreach ($items as $key => $item) {
             $itemSubtotal = (float) ($item['subtotal'] ?? 0);
             $subtotal += $itemSubtotal;
 
-            // Calculate tax from product
-            if (! empty($item['product_variant_id'])) {
-                $variant = ProductVariant::with('product')->find($item['product_variant_id']);
-                if ($variant && $variant->product) {
-                    $taxPercent = (float) ($variant->product->tax_percentage ?? 0);
-                    $tax += $itemSubtotal * ($taxPercent / 100);
-                }
+            $taxPercent = (float) ($item['tax_percentage'] ?? 10);
+            
+            // Si el IVA está incluido en el precio, el cálculo del impuesto es subtotal / (1 + (% / 100)) o subtotal / 11, etc.
+            // Según sistema paraguayo IVA 10% incluido se saca dividiendo entre 11, IVA 5% entre 21. 
+            // Esto asume precios con IVA incluido. B2B quita el 10% fijo por regla anterior (podría requerir ajuste futuro B2B general)
+            if ($taxPercent == 10) {
+                $subtotal_10 += $itemSubtotal;
+                $itemTax = $itemSubtotal / 11;
+                $tax_10 += $itemTax;
+            } elseif ($taxPercent == 5) {
+                $subtotal_5 += $itemSubtotal;
+                $itemTax = $itemSubtotal / 21;
+                $tax_5 += $itemTax;
+            } else {
+                $subtotal_exenta += $itemSubtotal;
+                $itemTax = 0;
+            }
+            
+            // Actualizar el impuesto a nivel de item si es posible
+            if ($isInsideRepeater && $get('../../items.' . $key . '.subtotal') !== null) {
+                 $set('../../items.' . $key . '.tax_amount', round($itemTax, 2));
             }
         }
 
         $discount = (float) ($isInsideRepeater ? $get('../../discount') : $get('discount')) ?: 0;
-        $total = $subtotal - $discount + $tax;
+        // The total is just the subtotal minus discount since prices include tax.
+        $total = $subtotal - $discount;
 
         if ($isInsideRepeater) {
             $set('../../subtotal', round($subtotal));
-            $set('../../tax', round($tax));
+            $set('../../subtotal_exenta', round($subtotal_exenta));
+            $set('../../subtotal_5', round($subtotal_5));
+            $set('../../subtotal_10', round($subtotal_10));
+            $set('../../tax_5', round($tax_5));
+            $set('../../tax_10', round($tax_10));
+            $set('../../tax', round($tax_5 + $tax_10));
             $set('../../total', round($total));
         } else {
             $set('subtotal', round($subtotal));
-            $set('tax', round($tax));
+            $set('subtotal_exenta', round($subtotal_exenta));
+            $set('subtotal_5', round($subtotal_5));
+            $set('subtotal_10', round($subtotal_10));
+            $set('tax_5', round($tax_5));
+            $set('tax_10', round($tax_10));
+            $set('tax', round($tax_5 + $tax_10));
             $set('total', round($total));
         }
     }
@@ -626,8 +688,27 @@ class SaleResource extends Resource
                         }
                     })
                     ->visible(fn (Sale $record): bool => $record->status === 'pending'),
+                Tables\Actions\Action::make('imprimir_presupuesto')
+                    ->label('Presupuesto')
+                    ->icon('heroicon-o-document-currency-dollar')
+                    ->color('secondary')
+                    ->action(function (Sale $record) {
+                        $receiptService = app(ReceiptService::class);
+                        // Los presupuestos usan un tipo de comprobante especial para no mezclarse con tickets definitivos.
+                        $type = 'sale_budget';
+                        $receipt = $record->receipts()->get()->firstWhere('type', $type);
+                        if (! $receipt) {
+                            $receipt = $receiptService->generateReceipt($record, $type);
+                        }
+                        $filename = "presupuesto_{$receipt->number}.pdf";
+
+                        return response()->streamDownload(function () use ($receiptService, $record, $receipt, $type) {
+                            echo $receiptService->generatePdf($record, $receipt, $type)->output();
+                        }, $filename);
+                    })
+                    ->visible(fn (Sale $record): bool => $record->status === 'pending'),
                 Tables\Actions\Action::make('imprimir')
-                    ->label('Imprimir')
+                    ->label('Imprimir Ticket/Factura')
                     ->icon('heroicon-o-printer')
                     ->color('info')
                     ->action(function (Sale $record) {
@@ -646,7 +727,7 @@ class SaleResource extends Resource
                             echo $receiptService->generatePdf($record, $receipt, $type)->output();
                         }, $filename);
                     })
-                    ->visible(fn (Sale $record): bool => in_array($record->status, ['completed', 'pending'])),
+                    ->visible(fn (Sale $record): bool => $record->status === 'completed'),
                 Tables\Actions\Action::make('anular')
                     ->label('Anular')
                     ->icon('heroicon-o-x-circle')

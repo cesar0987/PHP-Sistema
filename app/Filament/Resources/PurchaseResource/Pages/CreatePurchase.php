@@ -16,30 +16,8 @@ class CreatePurchase extends CreateRecord
         /** @var Purchase $purchase */
         $purchase = $this->record;
 
-        // Only add stock if the purchase is marked as received
-        if ($purchase->status !== 'received') {
-            return;
-        }
-
-        $inventoryService = app(InventoryService::class);
-        $warehouse = $purchase->warehouse;
-
-        if (! $warehouse) {
-            return;
-        }
-
-        foreach ($purchase->items as $item) {
-            $inventoryService->addStock(
-                $item->productVariant,
-                $warehouse,
-                $item->quantity,
-                [
-                    'type' => 'purchase',
-                    'reference_id' => $purchase->id,
-                    'reference_type' => Purchase::class,
-                    'notes' => "Compra #{$purchase->id}",
-                ]
-            );
+        if ($purchase->status === 'received') {
+            app(InventoryService::class)->addPurchaseStock($purchase);
         }
     }
 

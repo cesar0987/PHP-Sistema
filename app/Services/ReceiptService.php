@@ -100,6 +100,7 @@ class ReceiptService
 
         // Fallbacks
         $view = match ($type) {
+            'sale_budget' => 'pdf.budget',
             'sale_invoice' => 'pdf.invoice',
             'sale_receipt' => 'pdf.receipt',
             'purchase_ticket' => 'pdf.purchase_ticket',

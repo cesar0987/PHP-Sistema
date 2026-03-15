@@ -18,7 +18,7 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?string $navigationGroup = 'Administración';
 
     protected static ?string $modelLabel = 'Usuario';
 
@@ -81,19 +81,53 @@ class UserResource extends Resource
                             )
                             ->required()
                             ->native(false)
+                            ->live() // Hacer reactivo para actualizar los permisos mostrados
                             ->afterStateHydrated(function ($component, $record) {
                                 if ($record) {
                                     $component->state($record->getRoleNames()->first());
                                 }
                             })
                             ->dehydrated(false),
+                            
+                        Forms\Components\Placeholder::make('role_permissions')
+                            ->label('Permisos asignados a este rol')
+                            ->content(function (Forms\Get $get) {
+                                $roleName = $get('role');
+                                if (! $roleName) {
+                                    return '-';
+                                }
+                                
+                                /** @var \Spatie\Permission\Models\Role|null $role */
+                                $role = \Spatie\Permission\Models\Role::where('name', $roleName)->where('guard_name', 'web')->first();
+                                
+                                if (! $role) {
+                                    return 'Este rol no tiene permisos específicos.';
+                                }
+                                $role->load('permissions');
+                                
+                                if ($role->permissions->isEmpty()) {
+                                    return 'Este rol no tiene permisos específicos.';
+                                }
+                                
+                                $badges = $role->permissions->pluck('name')->map(function ($p) {
+                                    $label = ucfirst(str_replace('_', ' ', $p));
+                                    // Usando clases tailwind de Filament para los badges
+                                    return "<span class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl bg-primary-500/10 text-primary-700 dark:text-primary-400 border border-primary-500/20'>✓ {$label}</span>";
+                                })->implode(' ');
+                                
+                                return new \Illuminate\Support\HtmlString("<div class='flex flex-wrap gap-2 mt-2'>{$badges}</div>");
+                            })
+                            ->visible(fn (Forms\Get $get) => filled($get('role'))),
                     ]),
 
                 Forms\Components\Section::make('Permisos adicionales')
                     ->description('Puede otorgar permisos adicionales a los que ya tiene por su rol.')
                     ->collapsed()
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make()
+                            ->columns([
+                                'default' => 3,
+                            ])
                             ->schema(static::getPermissionCheckboxes()),
                     ]),
             ]);

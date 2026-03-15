@@ -58,14 +58,16 @@
         }
         .items-table tbody tr:nth-child(even) td { background: #f5faf8; }
         .item-number { text-align: center; color: #888; width: 30px; }
-        .item-qty { text-align: center; width: 50px; }
-        .item-cost { text-align: right; width: 100px; }
-        .item-subtotal { text-align: right; width: 110px; font-weight: 600; }
+        .item-qty { text-align: center; width: 40px; }
+        .item-exenta { text-align: right; width: 70px; }
+        .item-iva5 { text-align: right; width: 70px; }
+        .item-iva10 { text-align: right; width: 70px; }
+        .item-subtotal { text-align: right; width: 80px; font-weight: 600; }
 
         /* ===== TOTALES ===== */
         .totales-wrapper { margin-top: 15px; width: 100%; }
-        .totales-notes { width: 55%; vertical-align: top; padding-right: 20px; }
-        .totales-table-wrapper { width: 45%; vertical-align: top; }
+        .totales-notes { width: 40%; vertical-align: top; padding-right: 20px; }
+        .totales-table-wrapper { width: 60%; vertical-align: top; }
         .totales-table { width: 100%; border-collapse: collapse; }
         .totales-table td { padding: 4px 8px; font-size: 10px; }
         .totales-table .total-label { text-align: right; color: #555; font-weight: 600; }
@@ -188,12 +190,19 @@
                 <th class="item-number">#</th>
                 <th class="item-qty">Cant.</th>
                 <th>Descripción</th>
-                <th class="item-cost">Costo Unit.</th>
-                <th class="item-subtotal">Subtotal</th>
+                <th class="item-exenta">Exentas</th>
+                <th class="item-iva5">5%</th>
+                <th class="item-iva10">10%</th>
             </tr>
         </thead>
         <tbody>
             @foreach($purchase->items as $index => $item)
+            @php
+                $itemTaxPct = $item->tax_percentage ?? 10;
+                $exenta = $itemTaxPct == 0 ? $item->subtotal : 0;
+                $iva5 = $itemTaxPct == 5 ? $item->subtotal : 0;
+                $iva10 = $itemTaxPct == 10 ? $item->subtotal : 0;
+            @endphp
             <tr>
                 <td class="item-number">{{ $index + 1 }}</td>
                 <td class="item-qty">{{ $item->quantity }}</td>
@@ -202,11 +211,21 @@
                     @if($item->productVariant->color) <span style="color:#888;">- {{ $item->productVariant->color }}</span> @endif
                     @if($item->productVariant->size) <span style="color:#888;">- {{ $item->productVariant->size }}</span> @endif
                 </td>
-                <td class="item-cost">{{ number_format($item->cost, 0, ',', '.') }} Gs</td>
-                <td class="item-subtotal">{{ number_format($item->subtotal, 0, ',', '.') }} Gs</td>
+                <td class="item-exenta">{{ $exenta > 0 ? number_format($exenta, 0, ',', '.') : '' }}</td>
+                <td class="item-iva5">{{ $iva5 > 0 ? number_format($iva5, 0, ',', '.') : '' }}</td>
+                <td class="item-iva10">{{ $iva10 > 0 ? number_format($iva10, 0, ',', '.') : '' }}</td>
             </tr>
             @endforeach
         </tbody>
+    </table>
+
+    <table class="totales-table" style="margin-top: 10px; border-top: 1px solid #1e6b5a;">
+        <tr>
+            <td class="total-label" style="text-align: left;">Suma de Subtotales:</td>
+            <td class="total-value">{{ number_format($purchase->subtotal_exenta ?? 0, 0, ',', '.') }}</td>
+            <td class="total-value">{{ number_format($purchase->subtotal_5 ?? 0, 0, ',', '.') }}</td>
+            <td class="total-value">{{ number_format($purchase->subtotal_10 ?? 0, 0, ',', '.') }}</td>
+        </tr>
     </table>
 
     {{-- ===== TOTALES + NOTAS ===== --}}
@@ -219,6 +238,21 @@
                     {{ $purchase->notes }}
                 </div>
                 @endif
+                <div class="notes-box" style="margin-top: 5px;">
+                    <div class="notes-title">Liquidación del IVA:</div>
+                    <table style="width: 100%; border: none;">
+                        <tr>
+                            <td style="font-size: 9px;">(5%):</td>
+                            <td style="font-size: 9px; text-align: right;">{{ number_format($purchase->tax_5 ?? 0, 0, ',', '.') }}</td>
+                            <td style="font-size: 9px; padding-left: 10px;">(10%):</td>
+                            <td style="font-size: 9px; text-align: right;">{{ number_format($purchase->tax_10 ?? 0, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="font-size: 9px; font-weight: bold; text-align: right; padding-top: 3px;">Total IVA:</td>
+                            <td style="font-size: 9px; font-weight: bold; text-align: right; padding-top: 3px;">{{ number_format($purchase->tax ?? 0, 0, ',', '.') }}</td>
+                        </tr>
+                    </table>
+                </div>
             </td>
             <td class="totales-table-wrapper">
                 <table class="totales-table">
@@ -226,7 +260,7 @@
                         $subtotalCalc = $purchase->items->sum('subtotal');
                     @endphp
                     <tr>
-                        <td class="total-label">Subtotal ({{ $purchase->items->count() }} items):</td>
+                        <td class="total-label">Subtotal Operación:</td>
                         <td class="total-value">{{ number_format($subtotalCalc, 0, ',', '.') }} Gs</td>
                     </tr>
                     @if($purchase->discount > 0)
@@ -235,14 +269,8 @@
                         <td class="total-value">-{{ number_format($purchase->discount, 0, ',', '.') }} Gs</td>
                     </tr>
                     @endif
-                    @if($purchase->tax > 0)
-                    <tr>
-                        <td class="total-label">Impuesto:</td>
-                        <td class="total-value">{{ number_format($purchase->tax, 0, ',', '.') }} Gs</td>
-                    </tr>
-                    @endif
                     <tr class="total-final">
-                        <td class="total-label">TOTAL:</td>
+                        <td class="total-label">TOTAL PAGO:</td>
                         <td class="total-value">{{ number_format($purchase->total, 0, ',', '.') }} Gs</td>
                     </tr>
                 </table>

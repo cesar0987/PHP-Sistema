@@ -12,6 +12,8 @@ class SaleItem extends Model
         'product_variant_id',
         'quantity',
         'price',
+        'tax_percentage',
+        'tax_amount',
         'discount',
         'subtotal',
     ];
@@ -20,6 +22,8 @@ class SaleItem extends Model
     {
         return [
             'price' => 'decimal:2',
+            'tax_percentage' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
             'discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];
