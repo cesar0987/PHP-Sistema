@@ -20,8 +20,12 @@ class CashRegisterStats extends BaseWidget
             return [];
         }
 
-        $totalSales = $cashRegister->sales()->whereIn('status', ['completed', 'pending'])->sum('total');
-        $expectedCash = $cashRegister->opening_amount + $totalSales;
+        $totalSales = $cashRegister->sales()->where('status', 'completed')->where('payment_method', 'contado')->sum('total');
+        $customerPayments = \App\Models\CustomerPayment::whereHas('sale', fn($q) => $q->where('cash_register_id', $cashRegister->id))
+            ->whereBetween('created_at', [$cashRegister->opened_at, $cashRegister->closed_at ?? now()])
+            ->sum('amount');
+
+        $expectedCash = $cashRegister->opening_amount + $totalSales + $customerPayments;
 
         return [
             Stat::make('Monto de Apertura', number_format($cashRegister->opening_amount, 0, ',', '.').' Gs')

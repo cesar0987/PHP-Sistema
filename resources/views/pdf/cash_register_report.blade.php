@@ -38,9 +38,14 @@
             </tr>
         </thead>
         <tbody>
-            @php $totalSales = 0; @endphp
+            @php 
+                $totalSales = 0; 
+                $customerPayments = \App\Models\CustomerPayment::whereHas('sale', fn($q) => $q->where('cash_register_id', $cashRegister->id))
+                    ->whereBetween('created_at', [$cashRegister->opened_at, $cashRegister->closed_at ?? now()])
+                    ->sum('amount');
+            @endphp
             @foreach($sales as $sale)
-                @if(in_array($sale->status, ['completed', 'pending']))
+                @if($sale->status === 'completed' && $sale->payment_method === 'contado')
                     @php $totalSales += $sale->total; @endphp
                 @endif
                 <tr>
@@ -57,8 +62,9 @@
 
     <div class="totals">
         <p>Monto de Apertura: {{ number_format($cashRegister->opening_amount, 0, ',', '.') }} Gs</p>
-        <p>Total Vendido (Completados): {{ number_format($totalSales, 0, ',', '.') }} Gs</p>
-        <p>Efectivo Esperado: {{ number_format($cashRegister->opening_amount + $totalSales, 0, ',', '.') }} Gs</p>
+        <p>Ventas al Contado: {{ number_format($totalSales, 0, ',', '.') }} Gs</p>
+        <p>Cobros de Créditos: {{ number_format($customerPayments, 0, ',', '.') }} Gs</p>
+        <p>Efectivo Esperado: {{ number_format($cashRegister->opening_amount + $totalSales + $customerPayments, 0, ',', '.') }} Gs</p>
         @if($cashRegister->status === 'closed')
             <p>Efectivo Físico Declarado: {{ number_format($cashRegister->closing_amount, 0, ',', '.') }} Gs</p>
             <p>Diferencia: {{ number_format($cashRegister->closing_amount - ($cashRegister->opening_amount + $totalSales), 0, ',', '.') }} Gs</p>

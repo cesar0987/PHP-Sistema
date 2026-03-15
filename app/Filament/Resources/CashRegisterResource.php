@@ -132,11 +132,16 @@ class CashRegisterResource extends Resource
                                 ])
                                 ->action(function (CashRegister $record, array $data, Tables\Actions\Action $action): void {
                                     $cashSales = \App\Models\Sale::where('cash_register_id', $record->id)
-                                        ->whereIn('status', ['completed'])
+                                        ->where('status', 'completed')
                                         ->where('payment_method', 'contado')
                                         ->sum('total');
                                         
-                                    $expected = $record->opening_amount + $cashSales;
+                                    $customerPayments = \App\Models\CustomerPayment::where('sale_id', null) // Pagos directos o cuotas
+                                        ->orWhereHas('sale', fn($q) => $q->where('cash_register_id', $record->id))
+                                        ->whereBetween('created_at', [$record->opened_at, now()])
+                                        ->sum('amount');
+
+                                    $expected = $record->opening_amount + $cashSales + $customerPayments;
                                     $reported = (float) $data['closing_amount'];
                                     
                                     if ($expected > 0) {
