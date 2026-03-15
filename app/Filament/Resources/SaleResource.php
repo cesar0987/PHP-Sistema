@@ -287,7 +287,7 @@ class SaleResource extends Resource
                                             if (!$variantId || !$branchId) return;
                                             
                                             $stock = \App\Models\Stock::where('product_variant_id', $variantId)
-                                                ->where('branch_id', $branchId)
+                                                ->whereHas('warehouse', fn ($query) => $query->where('branch_id', $branchId))
                                                 ->sum('quantity');
                                                 
                                             if ($value > $stock) {
