@@ -8,14 +8,14 @@
 
 ## Fases del plan
 
-| Fase | Nombre | Foco | Dependencias |
-|---|---|---|---|
-| **F1** | Controles internos | Policies, autenticación, autorización | ✅ Completada |
-| **F2** | Validación de datos | Form Requests, reglas de negocio | ✅ Completada |
-| **F3** | Testing y calidad | Tests unitarios y de feature | ⬜ En proceso |
-| **F4** | Documentación técnica | DER, DFDs, diccionario de datos, arquitectura | ✅ Completada |
-| **F5** | Documentación operativa | Manuales de usuario, runbook, changelog | ✅ Completada |
-| **F6** | Producción y continuidad | Backups, migración BD, deploy, capacitación | F1-F5 |
+| Fase   | Nombre                   | Foco                                          | Dependencias |
+| ------ | ------------------------ | --------------------------------------------- | ------------ |
+| **F1** | Controles internos       | Policies, autenticación, autorización         | ✅ Completada |
+| **F2** | Validación de datos      | Form Requests, reglas de negocio              | ✅ Completada |
+| **F3** | Testing y calidad        | Tests unitarios y de feature                  | ✅ Completada |
+| **F4** | Documentación técnica    | DER, DFDs, diccionario de datos, arquitectura | ✅ Completada |
+| **F5** | Documentación operativa  | Manuales de usuario, runbook, changelog       | ✅ Completada |
+| **F6** | Producción y continuidad | Backups, migración BD, deploy, capacitación   | F1-F5        |
 
 ---
 
@@ -104,11 +104,11 @@
 - [ ] `ReceiptServiceTest` — pospuesto (requiere DomPDF + vistas renderizadas)
 
 ### 3.2 Tests de feature (flujos completos)
-- [ ] Flujo de venta: buscar → agregar → cobrar → stock actualizado
-- [ ] Flujo de compra: crear → recibir → stock incrementado
-- [ ] Anulación: anular venta → stock devuelto
-- [ ] Cierre de caja: cerrar → totales calculados
-- [ ] Login fallido: 5 intentos → bloqueado
+- [x] Flujo de venta: buscar → agregar → cobrar → stock actualizado (`SaleFlowTest`)
+- [x] Flujo de compra: crear → recibir → stock incrementado (`PurchaseFlowTest`)
+- [x] Anulación: anular venta → stock devuelto (`SaleFlowTest`)
+- [x] Cierre de caja: cerrar → totales calculados (`CashRegisterFlowTest`)
+- [x] Login fallido: 5 intentos → bloqueado (`AuthFlowTest`)
 
 ### 3.3 Calidad de código
 - [x] Instalar y configurar Laravel Pint (PSR-12) — 29 archivos formateados
@@ -117,7 +117,7 @@
 - [ ] Configurar pre-commit hook (opcional)
 
 ### Entregable F3
-✅ 28 tests pasando (72 assertions), código formateado PSR-12, Larastan nivel 5 instalado
+✅ 58 tests pasando (144 assertions), código formateado PSR-12, Larastan nivel 5 instalado
 
 ---
 
@@ -228,7 +228,7 @@
 |---|---|---|
 | F1 — Controles internos | 2-3 días | 🔴 Alta |
 | F2 — Validación | 1-2 días | 🔴 Alta |
-| F3 — Testing | 2-3 días | 🔴 Alta |
+| F3 — Testing | ✅ | 🔴 Alta |
 | F4 — Doc. técnica | 1-2 días | 🟡 Media |
 | F5 — Doc. operativa | ✅ | 🟡 Media |
 | F6 — Producción | ✅ Completado | 🟡 Media |

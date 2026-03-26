@@ -1,24 +1,24 @@
 
 
-> **Stack:** Laravel · Filament v3 · Livewire v3 · SQLite (dev)  
-> **Nivel:** Semi-senior · Desarrollo con IA + MCP  
+> **Stack:** Laravel · Filament v3 · Livewire v3 · SQLite (dev)
+> **Nivel:** Semi-senior · Desarrollo con IA + MCP
 > **Áreas:** Seguridad · Performance · UX · Integraciones · Testing · Documentación
 
 ---
 
 ## Progreso general
 
-| Área                        | Items | Estado     |
-| --------------------------- | ----- | ---------- |
-| Seguridad y auditoría       | 10    | ✅✅⬜⬜✅⬜⬜✅✅✅ |
-| Performance y escalabilidad | 10    | ✅⬜✅✅✅⬜⬜⬜⬜✅ |
-| Experiencia de usuario (UX) | 10    | ⬜⬜⬜⬜✅✅✅⬜⬜✅ |
-| Integraciones externas      | 9     | ⬜⬜⬜⬜⬜⬜⬜⬜⬜  |
-| Testing y calidad           | 10    | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| Documentación               | 9     | ✅✅⬜⬜⬜⬜⬜⬜⬜  |
+| Área                        | Items | Estado                    | % |
+| --------------------------- | ----- | ------------------------- | - |
+| Seguridad y auditoría       | 10    | ✅⬜⬜✅✅⬜✅✅✅✅ | 7/10 |
+| Performance y escalabilidad | 10    | ✅⬜✅✅✅⬜⬜⬜⬜✅ | 5/10 |
+| Experiencia de usuario (UX) | 10    | ⬜⬜⬜⬜✅✅✅⬜⬜✅ | 4/10 |
+| Integraciones externas      | 9     | ⬜⬜⬜🔄⬜⬜⬜⬜⬜  | 1/9 |
+| Testing y calidad           | 10    | ✅✅✅✅✅✅✅⬜⬜⬜ | 7/10 |
+| Documentación               | 9     | ✅✅✅✅⬜✅✅✅✅  | 8/9 |
 
-> **Última actualización:** Sesión 5 (14/03/2026)  
-> **Avances recientes:** SoftDeletes en 13 modelos, LogsActivity en 15 modelos, ActivityResource con pestañas por categoría, handler global de errores de BD, InventoryCount en grupo Inventario
+> **Última actualización:** 26/03/2026
+> **Avances recientes:** 58 tests pasando (144 assertions), F3 Kendall completada, SIFEN CDC+QR+XML implementados, AuthFlowTest con rate limiting, SaleService bug de doble descuento corregido, documentación completa actualizada
 
 ---
 
@@ -28,67 +28,56 @@
 
 ### Autenticación y accesos
 
+- [x] **Bloqueo por intentos fallidos de login** ✅
+  - `throttle` via `danharrin/livewire-rate-limiting` en el componente Login de Filament
+  - Límite: 5 intentos por minuto por IP
+  - Cubierto por `AuthFlowTest::test_login_is_blocked_after_five_attempts`
+
 - [ ] **Activar 2FA para usuarios admin**
   - Paquete: `Laravel Fortify` o `Jetstream`
   - Aplicar solo a roles admin y supervisor
-
-- [x] **Bloqueo por intentos fallidos de login**
-  - `throttle` middleware en rutas de autenticación
-  - Guardar `login_attempts` en tabla `users`
 
 - [ ] **Tokens de API con scopes por rol**
   - `Laravel Sanctum` con `->createToken('pos', ['sale:create'])`
   - Cada rol tiene abilities distintas
 
-- [x] **Expiración automática de sesiones inactivas**
-  - `config/session.php` → ajustar `lifetime` (ej. 120 min)
-  - Redirigir al login con mensaje claro
+- [x] **Expiración automática de sesiones inactivas** ✅
+  - `config/session.php` → `lifetime` configurado
+  - Redirige al login con mensaje claro
 
-- [x] **Logs de auditoría en cada acción sensible**
-  - Paquete: `spatie/laravel-activitylog`
-  - Registrar: ventas, ajustes de stock, anulaciones, login
-
-### Datos y base de datos
+- [x] **Logs de auditoría en cada acción sensible** ✅
+  - `spatie/laravel-activitylog` implementado en todos los modelos
+  - Registra: ventas, ajustes de stock, anulaciones, login/logout/failed
+  - Listeners: `LoginListener`, `LogoutListener`, `FailedLoginListener`
+  - Pestaña "Autenticación" en `ActivityResource`
 
 - [ ] **Nunca exponer IDs secuenciales en URLs**
   - Usar `UUIDs` como primary key o `hashids`
   - `$table->uuid('id')->primary()` en migraciones
 
-- [ ] **Validar y sanitizar todos los inputs**
-  - `Form Requests` de Laravel para cada operación
-  - Nunca validar directamente en controllers
+- [x] **Validar y sanitizar todos los inputs** ✅
+  - Form Requests implementados: `StoreSaleRequest`, `StorePurchaseRequest`, `StoreInventoryAdjustmentRequest`, `UpdateProductRequest`, `StoreCashRegisterRequest`
+  - Filament complementa con `->rules()` y `->helperText()`
 
-- [x] **Encriptar datos sensibles en BD**
+- [x] **Encriptar datos sensibles en BD** ✅
   - `encrypt()` / `decrypt()` de Laravel
-  - Aplicar en: RUC, datos bancarios, tokens de integración
+  - Aplicado en: datos bancarios, tokens de integración
 
-- [x] **Backups automáticos diarios**
-  - Paquete: `spatie/laravel-backup`
-  - Destino: S3, Google Drive o disco local externo
+- [x] **Backups automáticos diarios** ✅
+  - `BackupSqliteCommand` artisan custom
+  - Programado diariamente en `routes/console.php`
 
-- [x] **Rate limiting en endpoints críticos**
-  - `RateLimiter::for('pos', ...)` en `RouteServiceProvider`
-  - Aplicar en: login, creación de ventas, ajustes de stock
+- [x] **Rate limiting en endpoints críticos** ✅
+  - `RateLimiter::for('login', ...)` — 5/min
+  - `RateLimiter::for('pos', ...)` — 60/min
+  - `RateLimiter::for('api', ...)` — 60/min
 
 ### Notas de implementación
 
 ```php
-// Activar auditoría en un modelo
-use Spatie\Activitylog\Traits\LogsActivity;
-
-class Sale extends Model
-{
-    use LogsActivity;
-
-    protected static $logAttributes = ['total', 'status', 'user_id'];
-    protected static $logName = 'sale';
-}
-```
-
-```php
-// Rate limiting en RouteServiceProvider
-RateLimiter::for('pos', function (Request $request) {
-    return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+// Rate limiting en AppServiceProvider
+RateLimiter::for('login', function (Request $request) {
+    return Limit::perMinute(5)->by($request->ip());
 });
 ```
 
@@ -100,30 +89,27 @@ RateLimiter::for('pos', function (Request $request) {
 
 ### Base de datos
 
-- [x] **Índices en columnas de búsqueda frecuente**
-  - Agregar en migraciones: `barcode`, `sku`, `sale_date`, `product_id`, `warehouse_id`
-  - Sin índices el POS se vuelve lento con 10.000+ productos
+- [x] **Índices en columnas de búsqueda frecuente** ✅
+  - `barcode`, `sku`, `sale_date`, `product_id`, `warehouse_id` indexados en migraciones
 
 - [ ] **Eager loading para evitar N+1**
+  - Larastan nivel 5 detecta 74 errores baseline — parte son N+1
   - `Product::with(['variants', 'category', 'locations'])->get()`
-  - Usar `->withCount('stockMovements')` en lugar de contar en PHP
+  - Fix incremental pendiente
 
-- [x] **Paginación en todos los listados de Filament**
-  - `->paginate(50)` — nunca `->get()` en tablas grandes
-  - Configurar en cada Resource: `protected static int $defaultTableRecordsPerPage = 25`
+- [x] **Paginación en todos los listados de Filament** ✅
+  - `$defaultTableRecordsPerPage = 25` en todos los Resources
 
-- [x] **Query caching para reportes pesados**
+- [x] **Query caching para reportes pesados** ✅
   - `Cache::remember('daily_sales_'.today(), 300, fn() => ...)`
-  - TTL de 5–15 minutos según frecuencia de cambio
 
-- [x] **Soft deletes en lugar de borrado real**
-  - `SoftDeletes` trait en todos los modelos principales
-  - Permite recuperar datos eliminados por error
+- [x] **Soft deletes en lugar de borrado real** ✅
+  - `SoftDeletes` en 13 modelos principales (Sale, Product, Customer, Supplier, etc.)
 
 ### Aplicación
 
 - [ ] **Cola de jobs para PDFs y emails**
-  - `Laravel Queues` con driver `redis` o `database`
+  - `Laravel Queues` con driver `database`
   - Generar PDF del ticket en background, no bloqueando el POS
 
 - [ ] **Optimizar imágenes de productos**
@@ -132,39 +118,14 @@ RateLimiter::for('pos', function (Request $request) {
 
 - [ ] **Horizon para monitorear colas en producción**
   - `laravel/horizon` → dashboard visual de jobs y workers
-  - Configurar alertas si la cola supera N jobs pendientes
 
 - [ ] **Telescopio en desarrollo para debug**
   - `laravel/telescope` → ver queries, jobs, requests, exceptions
-  - Solo en entorno `local`, nunca en producción
+  - Solo en entorno `local`
 
-- [x] **Config y rutas cacheadas en producción**
-  - `php artisan config:cache`
-  - `php artisan route:cache`
-  - `php artisan view:cache`
-
-### Notas de implementación
-
-```php
-// Índices en migración
-Schema::table('products', function (Blueprint $table) {
-    $table->index('barcode');
-    $table->index('sku');
-    $table->index(['category_id', 'active']);
-});
-```
-
-```php
-// Job para generar PDF en background
-class GenerateReceiptPdf implements ShouldQueue
-{
-    public function handle(): void
-    {
-        $pdf = PDF::loadView('receipts.ticket', ['sale' => $this->sale]);
-        Storage::put("receipts/{$this->sale->id}.pdf", $pdf->output());
-    }
-}
-```
+- [x] **Config y rutas cacheadas en producción** ✅
+  - `php artisan config:cache && route:cache && view:cache`
+  - Documentado en `Obsidian/Deploy_Produccion.md`
 
 ---
 
@@ -175,10 +136,9 @@ class GenerateReceiptPdf implements ShouldQueue
 ### POS y flujo de venta
 
 - [ ] **Atajos de teclado en el POS**
-  - `F2` = nueva venta
-  - `F4` = ir a cobrar
-  - `ESC` = cancelar / limpiar carrito
-  - `F6` = búsqueda manual de producto
+  - Plan: `Obsidian/Plan_Navegacion_Atajos.md`
+  - `F2` = nueva venta · `F4` = cobrar · `ESC` = cancelar · `F6` = búsqueda
+  - Implementar con Alpine.js `@keydown`
 
 - [ ] **Feedback visual inmediato al escanear barcode**
   - Flash verde si el producto se encontró
@@ -193,22 +153,19 @@ class GenerateReceiptPdf implements ShouldQueue
   - Guardar estado del carrito en `localStorage`
   - Sincronizar con backend cada 30 segundos
 
-- [x] **Confirmación antes de anular una venta**
-  - Modal con motivo obligatorio (select + texto libre)
-  - Registrar en `stock_movements` con type `return`
+- [x] **Confirmación antes de anular una venta** ✅
+  - Modal con motivo en Filament
+  - `cancelSale()` registra en `stock_movements` con type `return`
 
 ### Panel Filament
 
-- [x] **Indicadores de stock en listado de productos**
+- [x] **Indicadores de stock en listado de productos** ✅
   - Badge verde: stock > mínimo
   - Badge amarillo: stock ≤ mínimo
   - Badge rojo: sin stock
 
-- [x] **Filtros rápidos preconfigurados**
-  - Sin stock
-  - Bajo stock mínimo
-  - Sin ubicación asignada
-  - Sin imagen
+- [x] **Filtros rápidos preconfigurados** ✅
+  - Sin stock · Bajo stock mínimo · Sin ubicación · Sin imagen
 
 - [ ] **Dashboard personalizable por rol**
   - Admin: ventas, margen, flujo de caja
@@ -219,27 +176,8 @@ class GenerateReceiptPdf implements ShouldQueue
   - `FilamentNotification` para: stock crítico, caja sin cerrar
   - Integrar con Laravel Broadcasting si hay varios usuarios
 
-- [x] **Modo oscuro activado**
-  - Ya incluido en Filament v3
-  - Activar en `AdminPanelProvider`: `->darkMode(true)`
-
-### Notas de implementación
-
-```php
-// Indicador de stock en Filament Table
-Tables\Columns\BadgeColumn::make('stock_status')
-    ->label('Stock')
-    ->getStateUsing(fn ($record) => match(true) {
-        $record->stock <= 0 => 'Sin stock',
-        $record->stock <= $record->stock_alert => 'Bajo',
-        default => 'OK',
-    })
-    ->colors([
-        'danger' => 'Sin stock',
-        'warning' => 'Bajo',
-        'success' => 'OK',
-    ]),
-```
+- [x] **Modo oscuro activado** ✅
+  - Habilitado en `AdminPanelProvider`: `->darkMode(true)`
 
 ---
 
@@ -252,7 +190,6 @@ Tables\Columns\BadgeColumn::make('stock_status')
 - [ ] **Pagos con QR — Bancard Paraguay**
   - API: Bancard vPOS
   - Generar QR en el POS → cliente escanea → confirmar pago
-  - Documentación: https://developers.bancard.com.py
 
 - [ ] **Pagos con tarjeta vía terminal físico**
   - Integración con terminal Bancard o PagosNet
@@ -262,10 +199,13 @@ Tables\Columns\BadgeColumn::make('stock_status')
   - Tabla `payments` con campo `status`: `partial | paid | pending`
   - Un sale puede tener múltiples payments (efectivo + tarjeta)
 
-- [ ] **Facturación electrónica SIFEN — SET Paraguay**
-  - API del Servicio Nacional de Facturación Electrónica
-  - Comprobantes electrónicos timbrados (obligatorio según facturación)
-  - Requiere certificado digital y habilitación previa en SET
+- 🔄 **Facturación electrónica SIFEN — SET Paraguay**
+  - Plan: `Obsidian/Plan_Sifen_XML.md`
+  - ✅ `SifenCdcService` — CDC 44 dígitos con módulo 11 (15 tests pasando)
+  - ✅ `SifenQrService` — URL QR con hash SHA256+CSC
+  - ✅ `SifenXmlService` — XML `<rDE>` completo (sin firma aún)
+  - ⬜ Firma digital RSA-SHA256 — requiere certificado `.p12` de la SET
+  - ⬜ Envío a SET (API REST) — requiere habilitación previa
 
 ### Sistema y externos
 
@@ -289,64 +229,54 @@ Tables\Columns\BadgeColumn::make('stock_status')
   - WhatsApp: Twilio o 360Dialog (WhatsApp Business API)
   - Email: `Laravel Mail` con plantilla del ticket en HTML
 
-### Notas de implementación
-
-```php
-// Exportar ventas a Excel
-class SalesExport implements FromCollection, WithHeadings
-{
-    public function collection()
-    {
-        return Sale::with('items.product')
-            ->whereBetween('sale_date', [$this->from, $this->to])
-            ->get()
-            ->map(fn($s) => [
-                'fecha'    => $s->sale_date->format('d/m/Y'),
-                'cliente'  => $s->customer->name ?? 'Consumidor final',
-                'total'    => $s->total,
-                'metodo'   => $s->payments->pluck('method')->join(', '),
-            ]);
-    }
-}
-```
-
 ---
 
 ## 5. Testing y calidad de código
 
-> Priorizar tests de los Services — son el corazón del negocio
+> **Estado actual: 58 tests / 144 assertions — todos pasando** ✅
 
-### Tests críticos del negocio
+### Tests unitarios ✅ (42 tests)
 
-- [ ] **Test unitario: SaleService.createSale()**
-  - Verificar cálculo correcto de total y descuento
-  - Verificar que el stock se descuenta correctamente
+- [x] **InventoryServiceTest** — 10 tests ✅
+  - `addStock`, `removeStock`, `adjustStock`, `transferStock`, `checkMinimum`, `getTotalStock`
 
-- [ ] **Test unitario: InventoryService.removeStock()**
-  - No debe permitir stock negativo
-  - Debe crear un `stock_movement` en cada operación
+- [x] **SaleServiceTest** — 4 tests ✅
+  - `calculateTotal`, `createSale`, `cancelSale`, stock insuficiente
 
-- [ ] **Test unitario: LocationService.numberToLetters()**
-  - `1 → A`, `26 → Z`, `27 → AA`, `28 → AB`, `53 → BA`
-  - Casos borde: 0, números negativos
+- [x] **PurchaseServiceTest** — 4 tests ✅
+  - `createPurchase`, `receiveProducts`, `cancelPurchase`
 
-- [ ] **Test de feature: flujo completo de venta**
-  - Desde buscar producto → agregar al carrito → cobrar → ticket PDF
-  - Verificar que el stock quedó actualizado
+- [x] **LocationServiceTest** — 6 tests ✅
+  - `numberToLetters`, `lettersToNumber`, roundtrip, `createLocation`, `assignLocation`
 
-- [ ] **Test de feature: compra actualiza stock**
-  - Recibir compra → verificar `stock_movements` creados
-  - Verificar que el stock en `stocks` aumentó correctamente
+- [x] **CreditServiceTest** — 2 tests ✅
+  - `recordSalePayment`, `updateCustomerBalance`
+
+- [x] **SifenCdcServiceTest** — 15 tests ✅
+  - `buildBase` (longitud, segmentos, padding), `calculateCheckDigit` (exactitud, rango, determinismo), `generateSecurityCode`, CDC completo 44 dígitos
+
+### Tests de feature ✅ (16 tests)
+
+- [x] **SaleFlowTest** — 5 tests ✅
+  - Venta completa descuenta stock · Pendiente no descuenta · Aprobar descuenta · Cancelar devuelve stock · Stock insuficiente lanza excepción
+
+- [x] **PurchaseFlowTest** — 4 tests ✅
+  - Pending no agrega stock · Recibir agrega stock · `receive_products=true` inmediato · Cancelar cambia status
+
+- [x] **CashRegisterFlowTest** — 4 tests ✅
+  - Estado open · Cierre registra datos · Ventas vinculadas · Totales correctos (IVA 10%)
+
+- [x] **AuthFlowTest** — 2 tests ✅
+  - Credenciales inválidas → error validación · 5 intentos → rate limit bloqueado
 
 ### Calidad de código
 
-- [ ] **Laravel Pint para formateo automático**
-  - `./vendor/bin/pint`
-  - Estilo PSR-12 — agregar al pipeline de CI
+- [x] **Laravel Pint** ✅ — 29 archivos formateados, PSR-12 aplicado
+- [x] **Larastan nivel 5** ✅ — instalado, 74 errores baseline registrados
 
-- [ ] **Larastan/PHPStan para análisis estático**
-  - `./vendor/bin/phpstan analyse --level=6`
-  - Detecta errores de tipos antes de ejecutar
+- [ ] **Corregir errores Larastan** (incremental)
+  - 74 errores baseline — fix archivo por archivo
+  - Foco en: N+1 queries, tipos de retorno faltantes
 
 - [ ] **Pre-commit hooks**
   - `CaptainHook` o scripts en `.git/hooks/pre-commit`
@@ -360,138 +290,81 @@ class SalesExport implements FromCollection, WithHeadings
   - `php artisan test --coverage`
   - Foco en: `SaleService`, `InventoryService`, `LocationService`
 
-### Notas de implementación
-
-```php
-// Test del generador de ubicaciones
-it('convierte números a letras correctamente', function () {
-    expect(LocationService::numberToLetters(1))->toBe('A');
-    expect(LocationService::numberToLetters(26))->toBe('Z');
-    expect(LocationService::numberToLetters(27))->toBe('AA');
-    expect(LocationService::numberToLetters(53))->toBe('BA');
-});
-
-// Test de stock negativo
-it('no permite stock negativo', function () {
-    $product = Product::factory()->create(['stock' => 5]);
-
-    expect(fn() => app(InventoryService::class)->removeStock($product, 10))
-        ->toThrow(InsufficientStockException::class);
-});
-```
-
-```yaml
-# GitHub Actions — .github/workflows/tests.yml
-name: Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3' }
-      - run: composer install --no-interaction
-      - run: cp .env.example .env && php artisan key:generate
-      - run: php artisan test --coverage
-```
-
 ---
 
 ## 6. Documentación del proyecto
 
-> La buena documentación es lo que convierte un proyecto personal en un producto vendible
+> **Estado actual: prácticamente completa** ✅
 
 ### Documentación técnica
 
-- [x] **README completo con setup del proyecto**
-  - Requisitos del sistema (PHP 8.3, Node, Redis)
-  - Pasos de instalación paso a paso
-  - Variables de entorno necesarias con descripción
+- [x] **CLAUDE.md + README con setup del proyecto** ✅
+  - Stack, estructura, comandos, reglas de arquitectura, SIFEN, testing
 
-- [x] **Documentar todos los Services con PHPDoc**
-  - `@param`, `@return`, `@throws` en cada método público
-  - Descripción del propósito de cada Service
+- [x] **Todos los Services con PHPDoc** ✅
+  - `@param`, `@return`, `@throws` en todos los métodos públicos de los 9 servicios
 
-- [ ] **Diagrama entidad-relación actualizado**
-  - Herramienta: `dbdiagram.io` o `DrawSQL`
-  - Exportar como imagen y versionar en `/docs/erd.png`
+- [x] **Diagrama entidad-relación** ✅
+  - `Obsidian/Diagrama_ER.md` — 35 tablas con relaciones y cardinalidad (Mermaid)
 
-- [ ] **Changelog por versión (CHANGELOG.md)**
-  - Formato: `## [1.0.0] - 2025-xx-xx`
-  - Secciones: Added · Changed · Fixed · Removed
+- [x] **CHANGELOG.md** ✅
+  - Versiones: v1.0 → v1.8, formato Added/Changed/Fixed/Removed
 
-- [ ] **Colección Postman o Bruno de la API**
-  - Exportar y versionar junto al código en `/docs/api/`
-  - Incluir ejemplos de request y response
+- [ ] **Colección Postman/Bruno de la API**
+  - No hay API REST aún — pendiente para cuando se implemente Sanctum
 
 ### Documentación operativa
 
-- [ ] **Manual de usuario para cajeros**
-  - PDF o Notion
-  - Cómo usar el POS, buscar productos, cobrar, anular
+- [x] **Manual de cajero** ✅ — `Obsidian/Manual_Cajero.md`
+- [x] **Manual de administrador** ✅ — `Obsidian/Manual_Admin.md`
+- [x] **Runbook de operaciones** ✅ — `Obsidian/Runbook.md`
+- [x] **Notas de arquitectura** ✅ — `Obsidian/Arquitectura_Sistema.md`, `Arquitectura_Servicios.md`
 
-- [ ] **Manual de administrador**
-  - Gestión de productos y categorías
-  - Sistema de ubicaciones y cómo asignarlas
-  - Cómo interpretar los reportes
+### Reglas del asistente IA (.cursor/rules/)
 
-- [ ] **Runbook de operaciones**
-  - Qué hacer si el sistema no carga
-  - Cómo restaurar un backup
-  - Contactos de soporte técnico
+- [x] `global.md` — idioma, restricciones absolutas, calidad
+- [x] `architecture.md` — service layer, BranchScope, transacciones
+- [x] `planning.md` — flujo de planificación, 12 planes documentados
+- [x] `git.md` — Conventional Commits, 18 scopes del proyecto
+- [x] `laravel.md` — convenciones Laravel 12 + Filament v3
+- [x] `sifen.md` — CDC, QR, XML, firma digital, campos requeridos
+- [x] `testing.md` — PHPUnit, Livewire, rate limiter, enum constraints
 
-- [ ] **Notas de arquitectura en Obsidian**
-  - Decisiones técnicas tomadas y por qué
-  - Alternativas consideradas y descartadas
-  - Deuda técnica conocida
+---
 
-### Estructura de docs sugerida
+## Próximas mejoras priorizadas
 
-```
-docs/
- ├── erd.png                  ← Diagrama entidad-relación
- ├── architecture.md          ← Decisiones de arquitectura
- ├── api/
- │   └── collection.json      ← Postman / Bruno
- ├── manuals/
- │   ├── cajero.pdf
- │   └── administrador.pdf
- └── runbook.md               ← Operaciones y emergencias
-```
+Ordenadas por impacto / esfuerzo:
+
+| Prioridad | Mejora | Área | Esfuerzo |
+|-----------|--------|------|----------|
+| 🔴 Alta | Firma digital SIFEN (`.p12` + `xmlseclibs`) | Integraciones | Alto (requiere cert SET) |
+| 🔴 Alta | Corregir errores Larastan (incremental) | Calidad | Medio |
+| 🔴 Alta | Atajos de teclado POS (F2, F4, ESC, F6) | UX | Bajo |
+| 🟡 Media | Exportar reportes a Excel | Integraciones | Bajo |
+| 🟡 Media | Cola de jobs para PDFs | Performance | Medio |
+| 🟡 Media | Eager loading N+1 | Performance | Bajo |
+| 🟡 Media | Dashboard personalizable por rol | UX | Medio |
+| 🟢 Baja | CI/CD GitHub Actions | Calidad | Bajo |
+| 🟢 Baja | 2FA para admin | Seguridad | Medio |
+| 🟢 Baja | Notificaciones en tiempo real | UX | Alto |
 
 ---
 
 ## Paquetes recomendados por área
 
-| Área | Paquete | Uso |
-|---|---|---|
-| Seguridad | `spatie/laravel-activitylog` | Auditoría de acciones |
-| Seguridad | `laravel/sanctum` | Tokens de API con scopes |
-| Performance | `laravel/horizon` | Monitor de colas en producción |
-| Performance | `laravel/telescope` | Debug en desarrollo |
-| Performance | `spatie/laravel-medialibrary` | Imágenes optimizadas |
-| UX | `wire:navigate` (Livewire v3) | Navegación SPA sin recargas |
-| Integraciones | `maatwebsite/excel` | Exportar reportes a Excel |
-| Integraciones | `barryvdh/laravel-dompdf` | Tickets y facturas en PDF |
-| Testing | `pestphp/pest` | Tests con sintaxis moderna |
-| Testing | `nunomaduro/larastan` | Análisis estático PHP |
-| Código | `laravel/pint` | Formateo automático PSR-12 |
-
----
-
-## Orden de implementación recomendado
-
-```
-Fase 1  →  Seguridad base (roles, 2FA, activitylog)
-Fase 2  →  Índices BD + eager loading + paginación
-Fase 3  →  Tests de Services críticos
-Fase 4  →  UX del POS (atajos, feedback, búsqueda)
-Fase 5  →  Integraciones (Bancard QR, Excel, WhatsApp)
-Fase 6  →  Documentación técnica y operativa
-Fase 7  →  CI/CD + Horizon en producción
-```
+| Área | Paquete | Uso | Estado |
+|---|---|---|---|
+| Seguridad | `spatie/laravel-activitylog` | Auditoría de acciones | ✅ Instalado |
+| Seguridad | `laravel/sanctum` | Tokens de API con scopes | ⬜ Pendiente |
+| Performance | `laravel/horizon` | Monitor de colas en producción | ⬜ Pendiente |
+| Performance | `laravel/telescope` | Debug en desarrollo | ⬜ Pendiente |
+| SIFEN | `robrichards/xmlseclibs` | Firma RSA-SHA256 | ⬜ Pendiente |
+| UX | `wire:navigate` (Livewire v3) | Navegación SPA sin recargas | ✅ Disponible |
+| Integraciones | `maatwebsite/excel` | Exportar reportes a Excel | ⬜ Pendiente |
+| Integraciones | `barryvdh/laravel-dompdf` | Tickets y facturas en PDF | ✅ Instalado |
+| Testing | `nunomaduro/larastan` | Análisis estático PHP | ✅ Instalado |
+| Código | `laravel/pint` | Formateo automático PSR-12 | ✅ Instalado |
 
 ---
 
@@ -506,4 +379,4 @@ Cuando escales el sistema para la ropería, estos puntos cambian:
 
 ---
 
-*Documento generado con Claude · Sistema POS Ferretería — Laravel + Filament*
+*Documento actualizado con Claude · Sistema POS Ferretería — Laravel + Filament*
