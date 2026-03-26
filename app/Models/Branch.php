@@ -22,12 +22,17 @@ class Branch extends Model
         'address',
         'phone',
         'active',
+        'establishment_code',
+        'dispatch_point',
+        'timbrado_number',
+        'timbrado_start_date',
     ];
 
     protected function casts(): array
     {
         return [
             'active' => 'boolean',
+            'timbrado_start_date' => 'date',
         ];
     }
 
