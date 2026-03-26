@@ -1,99 +1,148 @@
-# Sistema POS Ferretería - Laravel + Filament
+# Terracota POS - Sistema Integral de Punto de Venta y Gestión
 
-Sistema de punto de venta (POS) para ferretería con gestión de inventario, ubicaciones, ventas y reportes.
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel)
+![Filament](https://img.shields.io/badge/Filament-v3-EAB308?style=flat-square&logo=filament)
+![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?style=flat-square&logo=php)
+![SQLite/PostgreSQL](https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-336791?style=flat-square&logo=postgresql)
 
-## Stack
+**Terracota POS** es una plataforma moderna de alta fiabilidad diseñada para la administración de comercios físicos (como ferreterías, tiendas de retail, etc.). Proporciona una gestión estricta y trazable de inventario, cajas registradoras, manejo multi-sucursal, y facturación electrónica (SIFEN - Paraguay).
 
-- **PHP** 8.3+
-- **Laravel** 12.x
-- **Filament** v3 (Admin Panel)
-- **Livewire** v3 (Componentes interactivos)
-- **SQLite** (desarrollo) / **PostgreSQL** (producción)
+---
 
-## Características
+## 🚀 Características Principales
 
-- CRUD completo de productos, categorías, proveedores, clientes
-- Sistema de ubicaciones A → Z → AA → AB
-- Stock movements (nunca modificar directo)
-- POS con lector de código de barras
-- Caja diaria
-- Métodos de pago múltiple (efectivo, tarjeta, transferencia, QR)
-- PDF tickets/facturas/recibos
-- Dashboard con widgets
-- Reportes de ventas y stock
+### 🛒 TPV (Punto de Venta) / Central de Ventas
+- Interfaz enfocada en la rapidez utilizando Filament Forms y Livewire.
+- Cajas diarias individuales por usuario (Apertura y Cierre con arqueo ciego o transparente).
+- **Múltiples métodos de pago integrados:** Efectivo, Tarjeta de Crédito, Tarjeta de Débito, Transferencia, Cheque y Código QR.
+- **Ventas a Crédito:** Gestión de clientes con límites de crédito autorizados y calendario de vencimiento de cuotas (Credit Due Dates).
+- Generación y guardado histórico completo de Notas de Pedido (Budgets).
 
-## Instalación
+### 📦 Gestión de Inventario Multi-Sucursal
+- Organización por **Empresas > Sucursales > Almacenes**.
+- Sistema de **Ubicaciones Dinámicas** detalladas (Pasillo, Estante, Fila, Posición) para optimizar la logística.
+- Historial estricto de **Movimientos de Stock** (no se permiten modificaciones crudas en la base de datos).
+- Compras a proveedores, Recepciones Parciales o Totales y Transferencias entre almacenes.
+- Lógica de importación/ajuste masivo en formato CSV manejada por servicios dedicados (StockImportService).
 
-```bash
-# Instalar dependencias
-composer install
+### 🇵🇾 Facturación Electrónica Paraguaya (SIFEN v150)
+- Soporte para emisión de recibos y facturas en tiempo real con las nuevas normativas de la SET / DNIT.
+- Servicio integrado de generación de **CDC (Código de Control de 44 dígitos)** con cálculo nativo de dígito verificador.
+- Generación automática de códigos QR codificados en SVE para escaneo del consumidor.
+- Control de Documentos: Tickets 80mm y Formatos PDF empresariales estándar (A4/Carta). Generación motorizada por `DomPDF`.
 
-# Copiar archivo de entorno
-cp .env.example .env
+### 🔐 Seguridad y Roles de Usuario
+El sistema viene precargado con protección basada en el paquete Spatie Permissions con 4 niveles primarios:
+- **Administrador:** Control total, configuración de la compañía, auditorías.
+- **Supervisor:** Gestionar permisos de sucursal, anulaciones/devoluciones de pedidos, calendario de cuentas por cobrar.
+- **Cajero:** Operativa de punto de venta (abrir caja, cobrar, registrar clientes, ver solo sus propias ventas).
+- **Cobrador:** Acceso a cuentas de clientes y rutas de cobro, gestión de abonos a crédito.
 
-# Generar clave
-php artisan key:generate
+---
 
-# Ejecutar migraciones
-php artisan migrate
+## 🏛️ Arquitectura del Software (Clean Architecture)
 
-# (Opcional) Poblar con datos de prueba
-php artisan db:seed
+Este proyecto aplica principios de **Clean Architecture** priorizando una clara separación de responsabilidades para favorecer la escalabilidad y las pruebas unitarias:
 
-# Iniciar servidor
-php artisan serve
-```
+- **Entities (Models):** Clases puras de Eloquent (Ej: `ProductVariant`, `Sale`). Se extrajo cualquier *N+1 query* y cálculos de negocio de los *accessors* (como totales de stock) delegándolos a Domain Services.
+- **Use Cases (Services Layer):** El core del negocio vive aquí (`SaleService`, `InventoryService`, `ReceiptService`). Estos servicios no dependen del framework (por ejemplo, nunca se usa `auth()->id()` o dependencias HTTP directamente dentro de ellos).
+- **Interface Adapters (Controllers & Filament Resources):** Proveen la conversión HTTP → Negocio. Filament actúa como la UI y la capa de Presentación primaria.
+- **Dependency Injection:** En lugar de `app(Service::class)` o "Service Locators" mágicos, todas las inyecciones se pasan de forma declarativa y por constructores.
 
-## Credenciales de prueba
+---
 
-- **URL:** http://localhost:8000/admin
-- **Email:** admin@ferreteria.com
-- **Password:** password
+## ⚙️ Requisitos del Sistema
 
-## Estructura
+- **PHP** >= 8.3
+- **Composer** v2+
+- **Node.js** y **NPM** (Para compilar assets front-end en caso de personalizaciones)
+- Extensión **PHP-GD** o **Imagick** (Requerida por Endroid QR Code y DomPDF).
+- Base de datos relacional (Para desarrollo: SQLite; Producción: PostgreSQL >= 14 o MySQL >= 8)
 
-```
+---
+
+## 🛠️ Instalación Rápida
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/tu-usuario/terracota-pos.git
+   cd terracota-pos
+   ```
+
+2. **Instalar dependencias:**
+   ```bash
+   composer install
+   npm install && npm run build
+   ```
+
+3. **Configurar el Entorno:**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   *No olvides configurar tu base de datos en el archivo `.env` o dejar SQLite para pruebas inmediatas.*
+
+4. **Migraciones y Poblar Datos:**
+   ```bash
+   php artisan migrate --seed
+   ```
+   *(El flag `--seed` inicializa los Roles de sistema, Permisos de UI, Un usuario Admin de prueba, y parámetros básicos de facturación).*
+
+5. **Lanzar el Servidor en Producción/Desarrollo:**
+   ```bash
+   php artisan serve
+   ```
+
+---
+
+## 👤 Credenciales de Acceso Local (Seeding)
+
+Tras correr los seeders (`DatabaseSeeder`), se creará una base fundacional con los siguientes datos de acceso general:
+
+- **Panel:** `http://localhost:8000/admin`
+- **Usuario Admin:** `admin@terracota.local` (o equivalente definido en sus seeds)
+- **Contraseña:** `password`
+
+---
+
+## 📂 Estructura de Directorios Clave
+
+```text
 app/
-├── Filament/
-│   ├── Resources/    # Recursos del admin
-│   ├── Pages/        # Páginas personalizadas
-│   └── Widgets/      # Widgets del dashboard
-├── Livewire/         # Componentes interactivos (POS)
-├── Models/           # Modelos Eloquent
-└── Services/        # Lógica de negocio
-    ├── SaleService.php
-    ├── InventoryService.php
-    ├── PurchaseService.php
-    ├── LocationService.php
-    └── ReceiptService.php
+├── Filament/          # Paneles, Formularios, Tablas e Interacciones de la UI
+│   ├── Resources/     # CRUDs visuales principales (Ventas, Clientes, Productos)
+│   ├── Widgets/       # Componentes analíticos del Dashboard
+│   └── Pages/         # Vistas con interfaces a medida (Ejem: Calendario de Créditos)
+├── Models/            # Entidades y Definición de Relaciones (ORM)
+└── Services/          # El Núcleo de Lógica del Negocio [CAPA DE DOMINIO]
+    ├── SaleService.php       # Gestión de creación, aprobación y anulación de ventas
+    ├── InventoryService.php  # Movimiento y auditoría de inventario (Kardex)
+    ├── PurchaseService.php   # Órdenes de compras y recepción
+    ├── ReceiptService.php    # Generación y ensamblado de Tickets y Facturas
+    └── Sifen/                # Lógica de Facturación SET (Cálculos CDC, XML, etc.)
+tests/
+├── Unit/              # Pruebas sin dependencias estructurales intensas (Probanza de Servicios)
+└── Feature/           # Pruebas de integración HTTP / Controladores
 ```
 
-## Comandos útiles
+---
+
+## 🧪 Pruebas Unitarias y Funcionales
+
+Terracota cuenta con un suite robusto de pruebas que aseguran la consistencia de los módulos críticos, en especial los Servicios Financieros y de Inventario:
 
 ```bash
-# Limpiar cache
-php artisan cache:clear
-
-# Ver rutas
-php artisan route:list
-
-# Ejecutar tests
+# Ejecutar toda la batería de test
 php artisan test
 
-# Instalar Filament
-php artisan filament:install
+# Solo ejecutar pruebas de facturación o stock
+php artisan test --filter SaleServiceTest
+php artisan test --filter InventoryServiceTest
 ```
 
-## Paquetes instalados
+---
 
-| Paquete | Uso |
-|---------|-----|
-| filament/filament | Panel admin |
-| livewire/livewire | POS interactivo |
-| spatie/laravel-permission | Roles y permisos |
-| spatie/laravel-activitylog | Auditoría |
-| barryvdh/laravel-dompdf | PDF tickets/facturas |
+## 📜 Licencia y Autoría
 
-## Licencia
-
-MIT
+Desarrollado específicamente para infraestructuras multi-cruzada orientadas a resultados rápidos de mostrador.
+El proyecto está construido bajo licencia [MIT](https://opensource.org/licenses/MIT). Las capas gráficas usan librerías licenciadas bajo la suite open source de Laravel y Filament V3.
