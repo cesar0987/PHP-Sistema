@@ -163,6 +163,8 @@ class DatabaseSeeder extends Seeder
             $user->assignRole($adminRole);
         }
 
+        $this->call(ReceiptTemplateSeeder::class);
+
         echo "✓ Datos de prueba creados exitosamente!\n";
         echo "  - Empresa: Ferretería Central\n";
         echo "  - Sucursal: Sucursal Principal\n";

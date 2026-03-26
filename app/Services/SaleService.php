@@ -74,6 +74,10 @@ class SaleService
                 'notes' => $data['notes'] ?? null,
             ]);
 
+            $warehouse = isset($data['warehouse_id'])
+                ? Warehouse::findOrFail($data['warehouse_id'])
+                : null;
+
             foreach ($data['items'] as $item) {
                 $productVariant = ProductVariant::findOrFail($item['product_variant_id']);
                 $itemSubtotal = $item['quantity'] * $item['price'];
@@ -88,8 +92,9 @@ class SaleService
                     'subtotal' => $itemSubtotal - $itemDiscount,
                 ]);
 
-                $warehouse = Warehouse::find($data['warehouse_id'] ?? 1);
-                if ($warehouse) {
+                // Solo descontar stock si la venta está completada.
+                // Las notas de pedido (pending) reservan el pedido sin afectar inventario.
+                if ($sale->status === 'completed' && $warehouse) {
                     $this->inventoryService->removeStock(
                         $productVariant,
                         $warehouse,
