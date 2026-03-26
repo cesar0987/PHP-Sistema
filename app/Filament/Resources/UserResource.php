@@ -213,6 +213,7 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\SelectFilter::make('roles')
                     ->label('Rol')

@@ -91,6 +91,7 @@ class SaleServiceTest extends TestCase
     public function test_create_sale_creates_sale_and_deducts_stock(): void
     {
         $sale = $this->service->createSale([
+            'user_id' => $this->user->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
             'items' => [
@@ -117,6 +118,7 @@ class SaleServiceTest extends TestCase
     public function test_cancel_sale_returns_stock(): void
     {
         $sale = $this->service->createSale([
+            'user_id' => $this->user->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
             'items' => [
@@ -142,6 +144,7 @@ class SaleServiceTest extends TestCase
         $this->expectException(\Exception::class);
 
         $this->service->createSale([
+            'user_id' => $this->user->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
             'items' => [

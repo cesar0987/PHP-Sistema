@@ -45,6 +45,7 @@ class LocationResource extends Resource
                 Tables\Columns\TextColumn::make('shelves_count')->label('Estantes')->counts('shelves'),
                 Tables\Columns\TextColumn::make('description')->label('Descripcion'),
             ])
+            ->defaultSort('code', 'asc')
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')->label('Almacen')->relationship('warehouse', 'name'),
             ])

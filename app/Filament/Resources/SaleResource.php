@@ -461,6 +461,67 @@ class SaleResource extends Resource
                             ->columnSpanFull()
                             ->rows(2),
                     ]),
+
+                // --- Pagos: solo para ventas completadas en contado ---
+                Forms\Components\Section::make('Pagos recibidos')
+                    ->description('Divida el cobro entre múltiples métodos de pago.')
+                    ->visible(fn (Get $get): bool =>
+                        $get('status') === 'completed' && $get('payment_method') !== 'credito'
+                    )
+                    ->schema([
+                        Forms\Components\Repeater::make('payments')
+                            ->label('')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Select::make('method')
+                                    ->label('Método')
+                                    ->options([
+                                        'efectivo'     => 'Efectivo',
+                                        'tarjeta'      => 'Tarjeta',
+                                        'transferencia'=> 'Transferencia',
+                                        'cheque'       => 'Cheque',
+                                        'qr'           => 'QR / Billetera digital',
+                                    ])
+                                    ->required()
+                                    ->default('efectivo'),
+                                Forms\Components\TextInput::make('amount')
+                                    ->label('Monto')
+                                    ->numeric()
+                                    ->required()
+                                    ->suffix('Gs')
+                                    ->minValue(1),
+                                Forms\Components\TextInput::make('reference')
+                                    ->label('Referencia')
+                                    ->placeholder('Nro. de operación, voucher…')
+                                    ->maxLength(100),
+                                Forms\Components\Hidden::make('payment_date')
+                                    ->default(now()->toDateTimeString()),
+                            ])
+                            ->columns(3)
+                            ->defaultItems(1)
+                            ->addActionLabel('Agregar método de pago')
+                            ->reorderable(false),
+
+                        Forms\Components\Placeholder::make('total_pagado')
+                            ->label('Total cobrado vs. total venta')
+                            ->content(function (Get $get): \Illuminate\Support\HtmlString {
+                                $payments = $get('payments') ?? [];
+                                $totalPagado = array_sum(array_column($payments, 'amount'));
+                                $totalVenta = (float) ($get('total') ?? 0);
+                                $diferencia = $totalVenta - $totalPagado;
+
+                                $color = $diferencia <= 0 ? '#15803d' : '#b91c1c';
+                                $label = $diferencia <= 0
+                                    ? 'Cobro completo ✓'
+                                    : 'Falta cobrar: '.number_format($diferencia, 0, ',', '.').' Gs';
+
+                                return new \Illuminate\Support\HtmlString(
+                                    "<span style='color:{$color}; font-weight:600;'>"
+                                    .number_format($totalPagado, 0, ',', '.').' Gs cobrados — '.$label
+                                    .'</span>'
+                                );
+                            }),
+                    ]),
             ]);
     }
 

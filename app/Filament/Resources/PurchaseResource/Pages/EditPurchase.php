@@ -43,6 +43,7 @@ class EditPurchase extends EditRecord
                         'type' => 'purchase',
                         'reference_id' => $purchase->id,
                         'reference_type' => Purchase::class,
+                        'user_id' => auth()->id(),
                         'notes' => "Compra #{$purchase->id}",
                     ]
                 );
@@ -60,6 +61,7 @@ class EditPurchase extends EditRecord
                             'type' => 'purchase_return',
                             'reference_id' => $purchase->id,
                             'reference_type' => Purchase::class,
+                            'user_id' => auth()->id(),
                             'notes' => "Reversión de Compra #{$purchase->id}",
                         ]
                     );

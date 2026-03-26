@@ -252,6 +252,25 @@
         </tr>
     </table>
 
+    {{-- ===== QR SIFEN ===== --}}
+    @if(!empty($qr_image))
+    <table style="width: 100%; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+        <tr>
+            <td style="vertical-align: middle; width: 70px;">
+                <img src="{{ $qr_image }}" style="width: 65px; height: 65px;" alt="QR SET">
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px; font-size: 8px; color: #666;">
+                <strong style="font-size: 9px; color: #444;">Consulta electrónica SET</strong><br>
+                Escanee el código QR para verificar este<br>
+                documento en el portal de la SET Paraguay.<br>
+                @if($sale->cdc)
+                <span style="font-family: monospace; font-size: 7px; color: #888;">CDC: {{ $sale->cdc }}</span>
+                @endif
+            </td>
+        </tr>
+    </table>
+    @endif
+
     {{-- ===== PIE DE PAGINA ===== --}}
     <div class="footer">
         <div class="footer-copies">Original: Cliente &nbsp;|&nbsp; Duplicado: Archivo</div>

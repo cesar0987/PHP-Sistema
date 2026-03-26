@@ -298,7 +298,7 @@ class InventoryService
      */
     protected function resolveUserId(?int $userId = null): int
     {
-        $resolved = $userId ?? auth()->id();
+        $resolved = $userId;
 
         if ($resolved === null) {
             throw new \RuntimeException(

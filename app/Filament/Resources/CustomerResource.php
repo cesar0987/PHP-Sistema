@@ -73,6 +73,7 @@ class CustomerResource extends Resource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
             ])
+            ->defaultSort('name', 'asc')
             ->recordUrl(fn (Customer $record): string => CustomerResource::getUrl('view', ['record' => $record]))
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Solo activos')->query(fn ($query) => $query->where('active', true)),

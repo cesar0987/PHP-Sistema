@@ -70,6 +70,7 @@ class CategoryResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\SelectFilter::make('parent_id')
                     ->relationship('parent', 'name')

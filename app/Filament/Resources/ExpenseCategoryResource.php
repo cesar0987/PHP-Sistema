@@ -57,6 +57,7 @@ class ExpenseCategoryResource extends Resource
                     ->label('Activo')
                     ->boolean(),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\Filter::make('active')
                     ->label('Solo Activos')

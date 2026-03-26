@@ -8,18 +8,31 @@ use App\Models\Receipt;
 use App\Models\ReceiptTemplate;
 use App\Models\Sale;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Blade;
 
 /**
  * Servicio de generación de comprobantes.
  *
- * Gestiona la creación, generación en PDF, descarga y transmisión
- * en línea de comprobantes de venta (tickets, facturas y recibos).
+ * Gestiona la creación y generación en PDF de comprobantes de venta.
+ * La conversión a Response HTTP (download/stream) es responsabilidad
+ * de la capa de Adaptadores (Resources/Controllers).
  */
 class ReceiptService
 {
+    /**
+     * Crea una nueva instancia del servicio de comprobantes.
+     *
+     * @param  SifenCdcService  $sifenCdcService  Servicio de generación de CDC SIFEN.
+     * @param  SifenQrService   $sifenQrService   Servicio de generación de QR SIFEN.
+     */
+    public function __construct(
+        private SifenCdcService $sifenCdcService,
+        private SifenQrService $sifenQrService,
+    ) {}
+
     /**
      * Genera un comprobante para una venta o compra, crea el PDF y lo almacena en disco.
      *
@@ -82,6 +95,7 @@ class ReceiptService
             $record->loadMissing(['customer', 'user', 'items.productVariant.product', 'branch']);
             $data['sale'] = $record;
             $data['company'] = $record->branch->company ?? null;
+            $data['qr_image'] = $this->generateQrDataUri($record);
         } elseif ($record instanceof Purchase) {
             $record->loadMissing(['supplier', 'user', 'items.productVariant.product', 'branch', 'warehouse']);
             $data['purchase'] = $record;
@@ -112,30 +126,27 @@ class ReceiptService
     }
 
     /**
-     * Genera y descarga el PDF de un comprobante como archivo adjunto.
-     *
-     * @param  Receipt  $receipt  El comprobante cuyo PDF se descargará.
-     * @return Response Respuesta HTTP con el PDF como descarga.
+     * Genera una imagen QR como data URI (SVG base64) para una venta.
+     * Si la venta tiene CDC lo usa; si no, genera el CDC al vuelo.
+     * Devuelve null si no se puede generar.
      */
-    public function downloadPdf(Receipt $receipt)
+    private function generateQrDataUri(Sale $sale): ?string
     {
-        $sale = $receipt->sale->load(['customer', 'user', 'items.productVariant.product', 'branch']);
+        try {
+            $cdc = $sale->cdc;
 
-        return $this->generatePdf($sale, $receipt, $receipt->type)
-            ->download("receipt_{$receipt->number}.pdf");
-    }
+            if (empty($cdc)) {
+                $codSeg = $this->sifenCdcService->generateSecurityCode();
+                $cdc = $this->sifenCdcService->generateFromSale($sale, $codSeg);
+            }
 
-    /**
-     * Genera y transmite el PDF de un comprobante directamente al navegador.
-     *
-     * @param  Receipt  $receipt  El comprobante cuyo PDF se transmitirá.
-     * @return Response Respuesta HTTP con el PDF para visualización en línea.
-     */
-    public function streamPdf(Receipt $receipt)
-    {
-        $sale = $receipt->sale->load(['customer', 'user', 'items.productVariant.product', 'branch']);
+            $qrUrl = $this->sifenQrService->generate($sale, $cdc);
 
-        return $this->generatePdf($sale, $receipt, $receipt->type)
-            ->stream("receipt_{$receipt->number}.pdf");
+            $svg = (new SvgWriter())->write(new QrCode(data: $qrUrl))->getString();
+
+            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

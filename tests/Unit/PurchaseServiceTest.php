@@ -70,6 +70,7 @@ class PurchaseServiceTest extends TestCase
     public function test_create_purchase_without_receiving(): void
     {
         $purchase = $this->service->createPurchase([
+            'user_id' => 1,
             'supplier_id' => $this->supplier->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
@@ -94,6 +95,7 @@ class PurchaseServiceTest extends TestCase
     public function test_create_purchase_with_receiving_adds_stock(): void
     {
         $purchase = $this->service->createPurchase([
+            'user_id' => 1,
             'supplier_id' => $this->supplier->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
@@ -115,6 +117,7 @@ class PurchaseServiceTest extends TestCase
     public function test_receive_products_updates_status_and_stock(): void
     {
         $purchase = $this->service->createPurchase([
+            'user_id' => 1,
             'supplier_id' => $this->supplier->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
@@ -140,6 +143,7 @@ class PurchaseServiceTest extends TestCase
     public function test_cancel_purchase_changes_status(): void
     {
         $purchase = $this->service->createPurchase([
+            'user_id' => 1,
             'supplier_id' => $this->supplier->id,
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,

@@ -61,6 +61,7 @@ class CreateSale extends CreateRecord
                         'type' => 'sale',
                         'reference_id' => $sale->id,
                         'reference_type' => Sale::class,
+                        'user_id' => auth()->id(),
                         'notes' => "Venta #{$sale->id}",
                     ]
                 );

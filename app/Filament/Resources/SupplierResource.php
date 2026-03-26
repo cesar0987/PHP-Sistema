@@ -50,6 +50,7 @@ class SupplierResource extends Resource
                 Tables\Columns\TextColumn::make('email')->label('Correo')->searchable(),
                 Tables\Columns\IconColumn::make('active')->label('Activo')->boolean(),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Solo activos')->query(fn ($query) => $query->where('active', true)),
                 Tables\Filters\TrashedFilter::make()->label('Eliminados'),

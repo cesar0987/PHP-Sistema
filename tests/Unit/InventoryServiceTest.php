@@ -60,7 +60,7 @@ class InventoryServiceTest extends TestCase
 
     public function test_add_stock_creates_stock_record(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 50);
+        $this->service->addStock($this->variant, $this->warehouse, 50, ['user_id' => 1]);
 
         $stock = Stock::where('product_variant_id', $this->variant->id)
             ->where('warehouse_id', $this->warehouse->id)
@@ -72,8 +72,8 @@ class InventoryServiceTest extends TestCase
 
     public function test_add_stock_increments_existing_stock(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 30);
-        $this->service->addStock($this->variant, $this->warehouse, 20);
+        $this->service->addStock($this->variant, $this->warehouse, 30, ['user_id' => 1]);
+        $this->service->addStock($this->variant, $this->warehouse, 20, ['user_id' => 1]);
 
         $stock = Stock::where('product_variant_id', $this->variant->id)
             ->where('warehouse_id', $this->warehouse->id)
@@ -84,8 +84,8 @@ class InventoryServiceTest extends TestCase
 
     public function test_remove_stock_decrements_quantity(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 50);
-        $this->service->removeStock($this->variant, $this->warehouse, 20);
+        $this->service->addStock($this->variant, $this->warehouse, 50, ['user_id' => 1]);
+        $this->service->removeStock($this->variant, $this->warehouse, 20, ['user_id' => 1]);
 
         $stock = Stock::where('product_variant_id', $this->variant->id)
             ->where('warehouse_id', $this->warehouse->id)
@@ -96,17 +96,17 @@ class InventoryServiceTest extends TestCase
 
     public function test_remove_stock_throws_on_insufficient_stock(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 10);
+        $this->service->addStock($this->variant, $this->warehouse, 10, ['user_id' => 1]);
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Stock insuficiente');
 
-        $this->service->removeStock($this->variant, $this->warehouse, 20);
+        $this->service->removeStock($this->variant, $this->warehouse, 20, ['user_id' => 1]);
     }
 
     public function test_adjust_stock_sets_exact_quantity(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 50);
+        $this->service->addStock($this->variant, $this->warehouse, 50, ['user_id' => 1]);
 
         $adjustment = $this->service->adjustStock(
             $this->variant,
@@ -134,7 +134,7 @@ class InventoryServiceTest extends TestCase
             'active' => true,
         ]);
 
-        $this->service->addStock($this->variant, $this->warehouse, 50);
+        $this->service->addStock($this->variant, $this->warehouse, 50, ['user_id' => 1]);
 
         $result = $this->service->transferStock(
             $this->variant,
@@ -157,7 +157,7 @@ class InventoryServiceTest extends TestCase
             'active' => true,
         ]);
 
-        $this->service->addStock($this->variant, $this->warehouse, 10);
+        $this->service->addStock($this->variant, $this->warehouse, 10, ['user_id' => 1]);
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Stock insuficiente');
@@ -173,14 +173,14 @@ class InventoryServiceTest extends TestCase
 
     public function test_check_minimum_detects_low_stock(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 3);
+        $this->service->addStock($this->variant, $this->warehouse, 3, ['user_id' => 1]);
 
         $this->assertTrue($this->service->checkMinimum($this->variant, $this->warehouse));
     }
 
     public function test_check_minimum_passes_when_above(): void
     {
-        $this->service->addStock($this->variant, $this->warehouse, 50);
+        $this->service->addStock($this->variant, $this->warehouse, 50, ['user_id' => 1]);
 
         $this->assertFalse($this->service->checkMinimum($this->variant, $this->warehouse));
     }
@@ -194,8 +194,8 @@ class InventoryServiceTest extends TestCase
             'active' => true,
         ]);
 
-        $this->service->addStock($this->variant, $this->warehouse, 30);
-        $this->service->addStock($this->variant, $warehouse2, 20);
+        $this->service->addStock($this->variant, $this->warehouse, 30, ['user_id' => 1]);
+        $this->service->addStock($this->variant, $warehouse2, 20, ['user_id' => 1]);
 
         $total = $this->service->getTotalStock($this->variant);
         $this->assertEquals(50, $total);

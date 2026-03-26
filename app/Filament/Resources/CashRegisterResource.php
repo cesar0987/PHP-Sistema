@@ -103,6 +103,7 @@ class CashRegisterResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('opened_at')->label('Apertura')->dateTime('d/m/Y H:i'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                             Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
                                 'open' => 'Abierta',

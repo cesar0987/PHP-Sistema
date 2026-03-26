@@ -167,6 +167,7 @@ class ProductResource extends Resource
                     ->label('Activo')
                     ->boolean(),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Categoria')

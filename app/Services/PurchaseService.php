@@ -54,7 +54,7 @@ class PurchaseService
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'branch_id' => $data['branch_id'],
                 'warehouse_id' => $data['warehouse_id'],
-                'user_id' => $data['user_id'] ?? auth()->id(),
+                'user_id' => $data['user_id'] ?? throw new \InvalidArgumentException('user_id es requerido para crear una compra'),
                 'total' => $total,
                 'discount' => $discount,
                 'tax' => $tax,
@@ -85,6 +85,7 @@ class PurchaseService
                             'type' => 'purchase',
                             'reference_id' => $purchase->id,
                             'reference_type' => Purchase::class,
+                            'user_id' => $purchase->user_id,
                             'notes' => "Compra #{$purchase->id}",
                         ]
                     );
@@ -115,6 +116,7 @@ class PurchaseService
                         'type' => 'purchase',
                         'reference_id' => $purchase->id,
                         'reference_type' => Purchase::class,
+                        'user_id' => $purchase->user_id,
                         'notes' => "Recepción compra #{$purchase->id}",
                     ]
                 );

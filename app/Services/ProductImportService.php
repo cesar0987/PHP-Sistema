@@ -161,6 +161,7 @@ class ProductImportService
         if ($isNew && $stockInicial > 0) {
             $this->inventoryService->addStock($variant, $warehouse, $stockInicial, [
                 'type'  => 'adjustment',
+                'user_id' => auth()->id(),
                 'notes' => 'Carga inicial - importación CSV',
             ]);
         }

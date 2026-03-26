@@ -95,7 +95,7 @@ class SaleService
 
             $sale = Sale::create([
                 'customer_id'      => $data['customer_id'] ?? null,
-                'user_id'          => $data['user_id'] ?? auth()->id(),
+                'user_id'          => $data['user_id'] ?? throw new \InvalidArgumentException('user_id es requerido para crear una venta'),
                 'branch_id'        => $data['branch_id'],
                 'cash_register_id' => $data['cash_register_id'] ?? null,
                 'subtotal'         => $subtotal,
@@ -141,6 +141,7 @@ class SaleService
                             'type' => 'sale',
                             'reference_id' => $sale->id,
                             'reference_type' => Sale::class,
+                            'user_id' => $sale->user_id,
                             'notes' => "Venta #{$sale->id}",
                         ]
                     );
@@ -242,6 +243,7 @@ class SaleService
                             'type' => 'sale',
                             'reference_id' => $sale->id,
                             'reference_type' => Sale::class,
+                            'user_id' => $sale->user_id,
                             'notes' => "Aprobación de Nota de Pedido #{$sale->id}",
                         ]
                     );
@@ -286,6 +288,7 @@ class SaleService
                             'type' => 'return',
                             'reference_id' => $sale->id,
                             'reference_type' => Sale::class,
+                            'user_id' => $sale->user_id,
                             'notes' => "Devolución venta #{$sale->id}",
                         ]
                     );

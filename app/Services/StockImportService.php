@@ -123,11 +123,13 @@ class StockImportService
             if ($cantidad > 0) {
                 $this->inventoryService->addStock($variant, $warehouse, $cantidad, [
                     'type'  => 'adjustment',
+                    'user_id' => auth()->id(),
                     'notes' => $motivoFinal,
                 ]);
             } else {
                 $this->inventoryService->removeStock($variant, $warehouse, abs($cantidad), [
                     'type'  => 'adjustment',
+                    'user_id' => auth()->id(),
                     'notes' => $motivoFinal,
                 ]);
             }

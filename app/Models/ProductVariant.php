@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $active
  * @property-read Product $product
  * @property-read string $name
- * @property-read int $total_stock
  */
 class ProductVariant extends Model
 {
@@ -67,11 +66,6 @@ class ProductVariant extends Model
     public function productLocations(): HasMany
     {
         return $this->hasMany(ProductLocation::class);
-    }
-
-    public function getTotalStockAttribute()
-    {
-        return $this->stocks()->sum('quantity');
     }
 
     public function getNameAttribute()

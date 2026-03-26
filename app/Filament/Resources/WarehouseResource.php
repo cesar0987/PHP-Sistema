@@ -47,6 +47,7 @@ class WarehouseResource extends Resource
                 Tables\Columns\IconColumn::make('active')->label('Activo')->boolean(),
                 Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime('d/m/Y H:i')->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('name', 'asc')
             ->filters([
                 Tables\Filters\SelectFilter::make('branch_id')->label('Sucursal')->relationship('branch', 'name'),
                 Tables\Filters\TrashedFilter::make()->label('Eliminados'),
