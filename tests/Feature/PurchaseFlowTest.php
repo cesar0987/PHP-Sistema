@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
+use App\Models\Category;
+use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Stock;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\InventoryService;
 use App\Services\PurchaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,96 +23,133 @@ class PurchaseFlowTest extends TestCase
     protected Branch $branch;
     protected Warehouse $warehouse;
     protected Supplier $supplier;
-    protected Product $product;
     protected ProductVariant $variant;
-    protected Stock $stock;
+    protected PurchaseService $purchaseService;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $company = \App\Models\Company::create(['name' => 'Mi Empresa']);
-        $this->branch = Branch::create(['company_id' => $company->id, 'name' => 'Sucursal 1']);
-        
-        $this->user = User::factory()->create([
-            'branch_id' => $this->branch->id,
-        ]);
+        $company       = Company::create(['name' => 'Mi Empresa', 'ruc' => '80000001']);
+        $this->branch  = Branch::create(['company_id' => $company->id, 'name' => 'Sucursal 1']);
+        $this->user    = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->actingAs($this->user);
 
         $this->warehouse = Warehouse::create([
-            'name' => 'Depósito Central',
+            'name'      => 'Depósito Central',
             'branch_id' => $this->branch->id,
         ]);
 
         $this->supplier = Supplier::create([
             'name' => 'Ferretería Proveedor SA',
-            'ruc' => '80012345-6',
+            'ruc'  => '80012345-6',
         ]);
 
-        $category = \App\Models\Category::create(['name' => 'Tornillos', 'slug' => 'tornillos']);
-        
-        $this->product = Product::create([
-            'name' => 'Tornillo 10mm',
-            'category_id' => $category->id,
-            'cost_price' => 30000,
-            'sale_price' => 50000,
-            'active' => true,
+        $category      = Category::create(['name' => 'Tornillos']);
+        $product       = Product::create([
+            'name'           => 'Tornillo 10mm',
+            'category_id'    => $category->id,
+            'cost_price'     => 30000,
+            'sale_price'     => 50000,
+            'tax_percentage' => 10,
+            'active'         => true,
         ]);
-
         $this->variant = ProductVariant::create([
-            'product_id' => $this->product->id,
-            'price' => 50000,
-            'sku' => 'TORN-01',
+            'product_id' => $product->id,
+            'sku'        => 'TORN-01',
         ]);
 
-        $this->stock = Stock::create([
+        // Stock inicial = 10 unidades
+        app(InventoryService::class)->addStock($this->variant, $this->warehouse, 10);
+
+        $this->purchaseService = app(PurchaseService::class);
+    }
+
+    public function test_pending_purchase_does_not_add_stock(): void
+    {
+        $purchase = $this->purchaseService->createPurchase([
+            'supplier_id'   => $this->supplier->id,
+            'branch_id'     => $this->branch->id,
+            'warehouse_id'  => $this->warehouse->id,
+            'purchase_date' => now(),
+            'status'        => 'pending',
+            'items'         => [
+                ['product_variant_id' => $this->variant->id, 'quantity' => 50, 'cost' => 28000],
+            ],
+        ]);
+
+        $this->assertEquals('pending', $purchase->status);
+
+        // Stock no debe haber cambiado
+        $stock = $this->variant->stocks()->where('warehouse_id', $this->warehouse->id)->first();
+        $this->assertEquals(10, $stock->quantity);
+    }
+
+    public function test_receive_purchase_adds_stock(): void
+    {
+        $purchase = $this->purchaseService->createPurchase([
+            'supplier_id'   => $this->supplier->id,
+            'branch_id'     => $this->branch->id,
+            'warehouse_id'  => $this->warehouse->id,
+            'purchase_date' => now(),
+            'status'        => 'pending',
+            'items'         => [
+                ['product_variant_id' => $this->variant->id, 'quantity' => 50, 'cost' => 28000],
+            ],
+        ]);
+
+        $this->purchaseService->receiveProducts($purchase);
+
+        // Stock: 10 + 50 = 60
+        $stock = $this->variant->stocks()->where('warehouse_id', $this->warehouse->id)->first();
+        $this->assertEquals(60, $stock->quantity);
+        $this->assertEquals('received', $purchase->fresh()->status);
+
+        $this->assertDatabaseHas('stock_movements', [
             'product_variant_id' => $this->variant->id,
-            'branch_id' => $this->branch->id,
-            'warehouse_id' => $this->warehouse->id,
-            'quantity' => 10,
+            'warehouse_id'       => $this->warehouse->id,
+            'type'               => 'purchase',
+            'quantity'           => 50,
         ]);
     }
 
-    public function test_complete_purchase_flow()
+    public function test_purchase_with_receive_products_adds_stock_immediately(): void
     {
-        $this->actingAs($this->user);
-
-        $purchaseData = [
-            'supplier_id' => $this->supplier->id,
-            'branch_id' => $this->branch->id,
-            'warehouse_id' => $this->warehouse->id,
-            'user_id' => $this->user->id,
-            'purchase_date' => now(),
-            'status' => 'pending',
-            'condition' => 'contado',
-            'invoice_number' => '001-001-1234567',
-            'items' => [
-                [
-                    'product_variant_id' => $this->variant->id,
-                    'quantity' => 50,
-                    'cost' => 28000, // Costo nuevo
-                    'subtotal' => 1400000,
-                ]
-            ]
-        ];
-
-        $purchaseService = app(PurchaseService::class);
-        $purchase = $purchaseService->createPurchase($purchaseData);
-
-        $this->assertEquals(1400000, $purchase->total);
-        $this->assertEquals('pending', $purchase->status);
-
-        // Recibir la compra
-        $purchaseService->receiveProducts($purchase);
-
-        // Validar que el stock aumentó 50
-        $this->assertEquals(60, $this->stock->fresh()->quantity);
-        $this->assertEquals('received', $purchase->fresh()->status);
-
-        // Validar el costo promedio o el history de compra
-        $this->assertDatabaseHas('stock_movements', [
-            'stock_id' => $this->stock->id,
-            'type' => 'purchase',
-            'quantity' => 50,
+        $this->purchaseService->createPurchase([
+            'supplier_id'     => $this->supplier->id,
+            'branch_id'       => $this->branch->id,
+            'warehouse_id'    => $this->warehouse->id,
+            'purchase_date'   => now(),
+            'status'          => 'received',
+            'receive_products'=> true,
+            'items'           => [
+                ['product_variant_id' => $this->variant->id, 'quantity' => 20, 'cost' => 28000],
+            ],
         ]);
+
+        $stock = $this->variant->stocks()->where('warehouse_id', $this->warehouse->id)->first();
+        $this->assertEquals(30, $stock->quantity);
+    }
+
+    public function test_cancel_purchase_changes_status(): void
+    {
+        $purchase = $this->purchaseService->createPurchase([
+            'supplier_id'  => $this->supplier->id,
+            'branch_id'    => $this->branch->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date'=> now(),
+            'status'       => 'pending',
+            'items'        => [
+                ['product_variant_id' => $this->variant->id, 'quantity' => 10, 'cost' => 28000],
+            ],
+        ]);
+
+        $this->purchaseService->cancelPurchase($purchase);
+
+        $this->assertEquals('cancelled', $purchase->fresh()->status);
+
+        // Stock no debe haber cambiado (no fue recibida)
+        $stock = $this->variant->stocks()->where('warehouse_id', $this->warehouse->id)->first();
+        $this->assertEquals(10, $stock->quantity);
     }
 }
