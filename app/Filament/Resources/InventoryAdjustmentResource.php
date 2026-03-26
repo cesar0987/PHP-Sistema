@@ -118,6 +118,7 @@ class InventoryAdjustmentResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i'),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
                     'pending' => 'Pendiente',
