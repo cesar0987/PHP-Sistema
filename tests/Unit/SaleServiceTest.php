@@ -78,13 +78,14 @@ class SaleServiceTest extends TestCase
 
         $result = $this->service->calculateTotal($items, 500);
 
-        // 3 * 10000 = 30000 subtotal
-        // 30000 * 10% = 3000 tax
-        // total = 30000 + 3000 - 500 = 32500
+        // Paraguay: prices include IVA.
+        // 3 * 10000 = 30000 subtotal (IVA incluido)
+        // IVA 10% embedded = 30000 * 10/110 = 2727.27
+        // total = 30000 - 500 (discount) = 29500
         $this->assertEquals(30000, $result['subtotal']);
-        $this->assertEquals(3000, $result['tax']);
+        $this->assertEqualsWithDelta(2727.27, $result['tax'], 0.01);
         $this->assertEquals(500, $result['discount']);
-        $this->assertEquals(32500, $result['total']);
+        $this->assertEquals(29500, $result['total']);
     }
 
     public function test_create_sale_creates_sale_and_deducts_stock(): void

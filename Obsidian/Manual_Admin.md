@@ -1,98 +1,298 @@
 # Manual del Administrador y Supervisor
 
+> **Roles:** `admin` / `supervisor`
+> **Acceso a:** Todos los módulos. El Admin ve todas las sucursales; el Supervisor ve solo la suya.
+> **Última actualización:** 26/03/2026
+
+---
+
 ## Índice
-1. [Introducción](#introducción)
-2. [Gestión de Sucursales y Usuarios](#gestión-de-sucursales-y-usuarios)
-   - Alta de Sucursales
-   - Alta de Usuarios y Roles
-   - Asignación de Permisos
-3. [Administración de Catálogos](#administración-de-catálogos)
-   - Categorías y Productos
-   - Plantillas de Comprobantes
-4. [Trazabilidad y Auditoría](#trazabilidad-y-auditoría)
-   - Registro de Actividades (Activity Log)
-5. [Reportes y Métricas](#reportes-y-métricas)
-6. [Manejo de Operaciones Avanzadas](#manejo-de-operaciones-avanzadas)
-   - Anulación de Ventas
-   - Recepción de Compras de Proveedores
-   - Ajustes de Inventario
+1. [Configuración inicial](#1-configuración-inicial)
+2. [Gestión de Usuarios y Roles](#2-gestión-de-usuarios-y-roles)
+3. [Catálogo de Productos](#3-catálogo-de-productos)
+4. [Módulo de Compras](#4-módulo-de-compras)
+5. [Inventario y Ajustes](#5-inventario-y-ajustes)
+6. [Sistema de Créditos a Clientes](#6-sistema-de-créditos-a-clientes)
+7. [Gestión Avanzada de Ventas](#7-gestión-avanzada-de-ventas)
+8. [Plantillas de Comprobantes](#8-plantillas-de-comprobantes)
+9. [Facturación Electrónica (SIFEN)](#9-facturación-electrónica-sifen)
+10. [Trazabilidad y Auditoría](#10-trazabilidad-y-auditoría)
+11. [Reportes](#11-reportes)
 
 ---
 
-## Introducción
-Este manual está dirigido a los usuarios con rol **Admin** o **Supervisor** del Sistema POS Terracota. Al contar con mayores privilegios, debes dominar no solo la operación comercial, sino también la configuración inicial, actualización de catálogos y auditoría contable/operativa de los empleados (cajeros).
+## 1. Configuración inicial
 
-> **Aviso Importante:** El rol **Admin** es global; puede ver toda la información de todas las sucursales. El rol **Supervisor** está asociado a un `branch_id` específico y solo verá datos de su propia sucursal, aunque contará con permisos avanzados (anulaciones, cierres forzosos).
+Antes de operar, configurar la empresa y sucursales.
 
----
+### 1.1 Datos de la empresa
 
-## Gestión de Sucursales y Usuarios
+Andá a **Configuración → Empresa**. Completá:
+- Nombre, RUC (formato `80000001-5`), dirección, teléfono, email
+- Para facturación SIFEN: RUC DV, tipo de contribuyente, actividad económica, ciudad/departamento
 
-Como administrador global, debes estructurar el sistema antes de la operación.
+### 1.2 Crear sucursales
 
-### Alta de Sucursales
-1. En el menú de navegación izquierdo, ve a **Branches / Sucursales**.
-2. Selecciona **New Branch**.
-3. Rellena los datos básicos: `name` (Ej: Sucursal Centro), `address` (Dirección física), `phone` y `email`.
-4. Si esta sucursal es la principal, activa el switch `is_main`.
-5. Pulsa **Create**.
+1. Menú **Configuración → Sucursales → Nueva Sucursal**.
+2. Completá nombre, dirección, teléfono.
+3. Para SIFEN: `establishment_code` (3 dígitos), `dispatch_point` (3 dígitos), número de timbrado y fecha de inicio.
 
-### Alta de Usuarios y Roles
-Solo los administradores o supervisores designados podrán dar acceso a nuevos cajeros.
-1. Ingresa a **Users / Usuarios**.
-2. Dale a **New User**.
-3. Rellena Nombre, Email y Contraseña.
-4. En el selector *Roles*, elige el rol correspondiente (`vendedor` para cajeros básicos, `almacenero` para encargados de depósito, o `supervisor` para administradores locales).
-5. Selecciona obligatoriamente a qué **Sucursal** (`branch_id`) pertenece dicho usuario. Si este campo queda nulo, el usuario no verá datos transaccionales, al menos que su rol sea `admin`.
-6. Haz clic en **Create**.
+### 1.3 Crear almacenes
 
-### Asignación de Permisos
-Si requieres permisos muy específicos para un usuario, el plugin *Shield* te permite asignar roles. Ve al módulo **Shield / Roles**, y podrás crear nuevos perfiles además de los existentes, marcando casillas exactas (ver ventas, editar productos, etc.).
+Cada sucursal necesita al menos un almacén.
+1. Menú **Almacenes → Nuevo Almacén**.
+2. Asigná a la sucursal correspondiente. Marcá el principal como `is_default = true`.
 
 ---
 
-## Administración de Catálogos
+## 2. Gestión de Usuarios y Roles
 
-### Categorías y Productos
-Mantener la base de datos de productos actualizada es vital.
-1. **Categorías**: Antes de cargar un producto, crea su Categoría (`Ferretería`, `Pinturas`, etc.) desde el menú **Categories**. Cada categoría pertenece a una **Compañía**, no a una sucursal, para que todas las sucursales vendan la misma base de ítems.
-2. **Productos**: Entra a **Products**. Carga el `Nombre`, código único (`SKU`), código de barras (`barcode`), precio base y umbral mínimo de inventario (`low_stock_threshold`). Enlázalo con la categoría recién creada.
+### 2.1 Crear usuarios
 
-### Plantillas de Comprobantes
-Puedes definir cómo se verán las facturas impresas.
-1. Ingresa a **Receipt Templates**.
-2. Rellena el HTML y CSS en los recuadros. Utiliza etiquetas Blade (`{{ $sale->total }}`) para el renderizado de datos.
-3. Pon un logo en la configuración de la Compañía.
+1. Menú **Usuarios → Nuevo Usuario**.
+2. Completá: Nombre, Email, Contraseña.
+3. Asigná el **Rol** correspondiente (ver tabla abajo).
+4. **⚠️ Obligatorio:** Asigná la **Sucursal** (`branch_id`). Sin esto, el usuario no verá datos.
+
+### 2.2 Roles del sistema
+
+| Rol | Descripción |
+|-----|-------------|
+| `admin` | Acceso total, todas las sucursales |
+| `supervisor` | Acceso avanzado, solo su sucursal |
+| `vendedor` | Crear ventas, consultar stock |
+| `almacenero` | Gestionar compras, ajustes de inventario |
+| `cobrador` | Ver y registrar cobros de créditos |
+
+Para ver el detalle de cada permiso, consultá [[Manual_Roles_Permisos]].
+
+### 2.3 Resetear contraseña
+
+Desde **Usuarios**, editá el usuario y completá el campo **Contraseña** con la nueva.
 
 ---
 
-## Trazabilidad y Auditoría
+## 3. Catálogo de Productos
 
-### Registro de Actividades (Activity Log)
-Para evitar robos silenciosos o identificar quién borró un registro:
-1. Navega a la sección **Activities** (bajo el apartado de Auditoría/Admin).
-2. Podrás ver un listado donde indica la fecha de la acción (`created_at`), el nombre del modelo afectado (Ej: `Sale`, `InventoryAdjustment`), qué pasó (Created, Updated, Deleted) y el **Causante (Causer)** (ej. "Juan Cajero").
-3. Si un cajero cambia un precio u anula una venta, toda la traza JSON del "antes" y el "después" se visualizará aquí.
+### 3.1 Crear categorías
+
+Antes de cargar productos, creá las categorías:
+1. **Categorías → Nueva Categoría**.
+2. Podés crear categorías padre (ej. "Herramientas") y subcategorías (ej. "Martillos").
+
+### 3.2 Crear productos
+
+1. **Productos → Nuevo Producto**.
+2. Campos obligatorios:
+   - Nombre
+   - Categoría
+   - Precio de venta (IVA incluido, según sistema paraguayo)
+   - Precio de costo
+   - `tax_percentage`: 0% (exento), 5% o 10%
+   - `min_stock`: stock mínimo antes de alerta
+3. Por cada producto se crea automáticamente una variante base. Podés agregar más variantes (color, talle, etc.).
+
+### 3.3 Carga inicial de stock
+
+Consultá [[Manual_Carga_Stock]] para el proceso detallado. Resumen:
+1. Crear el producto.
+2. Ir a **Ajustes de Inventario → Nuevo Ajuste**.
+3. Tipo: `entrada`, Almacén: el de tu sucursal, Motivo: `carga_inicial`.
 
 ---
 
-## Manejo de Operaciones Avanzadas
+## 4. Módulo de Compras
 
-### Anulación de Ventas
-Si un cliente devuelve la mercancía o la factura salió errada:
-1. Un Administrador debe ir a **Sales / Ventas**.
-2. Entrar a ver o editar la factura errónea.
-3. Rellenar el campo **Cancellation reason** (Motivo de Anulación) y cambiar el estado o directamente darle a `Eliminar/Soft Delete` si el sistema se configuró para SoftDeletes, lo cual es útil si la anulación exige aprobación especial.
+### 4.1 Crear una orden de compra
 
-### Recepción de Compras de Proveedores
-Para dar ingreso de stock formal:
-1. Ve a **Compras / Purchases**.
-2. Ingresa la factura del proveedor de compra.
-3. Esto sumará el stock de inmediato si el estatus final de la compra es `received`.
+1. **Compras → Nueva Compra**.
+2. Seleccioná el proveedor, fecha y almacén destino.
+3. Agregá los ítems (producto, cantidad, precio de costo).
+4. Estado inicial: `Pendiente` — no afecta stock todavía.
 
-### Ajustes de Inventario
-En caso de pérdida, hurto, roturas o mermas:
-1. Ve a **Inventory Adjustments**.
-2. Crea un ajuste e indica una razón (Ej. Mercadería dañada, Pérdida).
-3. Selecciona el Almacén de tu sucursal.
-4. Esto bajará (-X) el nivel de stock global de ese ítem, en vez de usar el proceso de Venta. Todo ajuste queda registrado con el ID del trabajador en el Activity Log.
+### 4.2 Recibir mercadería
+
+Cuando la mercadería llega físicamente:
+1. En el listado de Compras, buscá la orden y hacé clic en **Recibir Productos**.
+2. Confirmá las cantidades recibidas.
+3. El stock se suma automáticamente al almacén.
+
+También podés crear la compra en estado `Recibido` directamente si la mercadería ya ingresó.
+
+### 4.3 Cancelar una compra
+
+Usá el botón **Cancelar** desde el listado. El stock NO se modifica si la compra no estaba recibida.
+
+---
+
+## 5. Inventario y Ajustes
+
+### 5.1 Ajustes de inventario
+
+Para pérdidas, roturas, mermas o correcciones:
+1. **Inventario → Ajustes → Nuevo Ajuste**.
+2. Seleccioná Almacén, Producto/Variante.
+3. Tipo: `entrada` (suma) o `salida` (resta).
+4. Ingresá la cantidad y el motivo (texto libre).
+5. Todo ajuste queda registrado con el usuario que lo hizo.
+
+### 5.2 Conteos físicos
+
+Para auditar el inventario real vs. el sistema:
+1. **Inventario → Conteos Físicos → Nuevo Conteo**.
+2. Agregá los productos y la cantidad física contada.
+3. El sistema calcula la diferencia automáticamente.
+4. Al completar el conteo, podés aplicar los ajustes automáticamente.
+
+### 5.3 Transferencias entre almacenes
+
+Si tu sucursal tiene más de un almacén:
+1. **Inventario → Transferencias → Nueva Transferencia**.
+2. Indicá origen, destino, producto y cantidad.
+
+---
+
+## 6. Sistema de Créditos a Clientes
+
+### 6.1 Habilitar crédito a un cliente
+
+1. **Clientes → editar el cliente**.
+2. Activá el toggle **Crédito habilitado** (`is_credit_enabled`).
+3. Fijá el **Límite de crédito** máximo en Gs.
+
+### 6.2 Calendario de Vencimientos (vista del cobrador/supervisor)
+
+Menú **Ventas → Calendario de Créditos**.
+
+Muestra las ventas a crédito individuales con:
+- Total de la venta
+- Monto ya cobrado
+- **Saldo pendiente** (en rojo si tiene deuda)
+- Fecha de vencimiento (con semáforo: 🔴 vencida / 🟡 próxima / 🟢 vigente)
+
+Los stats de la parte superior muestran:
+- Cantidad de ventas vencidas
+- Ventas por vencer en 7 días
+- Saldo total pendiente en Gs
+
+### 6.3 Registrar un cobro
+
+Desde el **Calendario de Créditos**, en la fila de la venta correspondiente:
+
+1. Hacé clic en **Registrar Cobro**.
+2. Se abre un modal con el resumen de la deuda.
+3. Completá:
+   - **Monto a cobrar** (puede ser parcial)
+   - **Método de pago** (Efectivo, Transferencia, Tarjeta, etc.)
+   - **Fecha del cobro**
+   - Si queda saldo: activá el toggle **¿Queda saldo pendiente?** y fijá la **Nueva fecha de vencimiento**
+4. Hacé clic en **Registrar cobro**.
+
+> **Regla de la fecha de vencimiento:** La fecha se calcula desde la fecha del **cobro**, no desde la fecha de la factura original. Esto permite acordar cuotas en base a cuándo el cliente va pagando.
+
+Cuando el saldo llega a cero, la venta sale automáticamente del calendario.
+
+---
+
+## 7. Gestión Avanzada de Ventas
+
+### 7.1 Aprobar una Nota de Pedido
+
+Las ventas en estado **Pendiente** (presupuestos) no afectan caja ni stock.
+
+Para convertirlas en venta real:
+1. En el listado de Ventas, ir a la tab **Notas de Pedido / Presupuestos**.
+2. Hacé clic en **Aprobar a Venta**.
+3. Registrá los pagos recibidos (puede ser múltiples métodos).
+4. Si es pago total en efectivo: usar **Cobro Rápido (Efectivo)**.
+
+### 7.2 Anular una venta completada
+
+1. Listado de Ventas → venta completada → **Anular** (botón rojo).
+2. Seleccioná el motivo en el desplegable.
+3. Podés agregar notas adicionales.
+4. Confirmá.
+
+El stock **vuelve al almacén** automáticamente. La venta queda en estado `Cancelado` y visible en el historial (nunca se borra definitivamente).
+
+### 7.3 Precios B2B (sin IVA)
+
+En el formulario de venta, el toggle **Precios B2B (Sin IVA)** recalcula todos los precios dividiéndolos por 1.1 para empresas que compran con exención de IVA.
+
+---
+
+## 8. Plantillas de Comprobantes
+
+El sistema tiene dos tipos de PDF:
+- **Ticket (80mm)**: para impresora térmica
+- **Factura (A4)**: para factura legal con timbrado y datos del receptor
+
+Para personalizar las plantillas:
+1. **Configuración → Plantillas de Comprobantes**.
+2. Editá el HTML/CSS directamente. Los datos se inyectan con variables Blade (`{{ $sale->total }}`).
+
+> Si no hay plantillas cargadas, ejecutar: `php artisan db:seed --class=ReceiptTemplateSeeder`
+
+---
+
+## 9. Facturación Electrónica (SIFEN)
+
+El sistema genera los componentes técnicos de la factura electrónica SET Paraguay:
+
+| Componente | Estado |
+|------------|--------|
+| CDC 44 dígitos | ✅ Generado automáticamente |
+| URL QR con hash CSC | ✅ Incluida en el PDF |
+| XML `<rDE>` SIFEN v150 | ✅ Generado por SifenXmlService |
+| Firma digital RSA-SHA256 | ⏳ Requiere certificado .p12 de la SET |
+
+Para emitir facturas electrónicas válidas ante la SET, configurar en `.env`:
+```
+SIFEN_ENV=test
+SIFEN_CSC_ID=0001
+SIFEN_CSC_VAL=ABCD0000000000000000000000000000
+```
+
+Consultá [[manual_sifen_v150]] para la documentación técnica oficial de la SET.
+
+---
+
+## 10. Trazabilidad y Auditoría
+
+### 10.1 Log de actividad
+
+Menú **Auditoría → Actividades**.
+
+Registra automáticamente:
+- Quién creó, modificó o eliminó cada registro
+- Fecha y hora exacta
+- Valores antes y después (JSON diff)
+- Módulos auditados: Ventas, Compras, Productos, Ajustes, Usuarios
+
+Filtrá por módulo (`venta`, `compra`, `inventario`, etc.) o por usuario para investigar movimientos específicos.
+
+### 10.2 Log de autenticación
+
+En la misma sección, filtrá por tipo `authentication` para ver:
+- Inicios de sesión exitosos
+- Intentos fallidos (con IP)
+- Cierres de sesión
+
+---
+
+## 11. Reportes
+
+El Dashboard principal (`/admin`) muestra:
+- Ventas del día / semana / mes
+- Productos más vendidos
+- Stock bajo por almacén
+- Ventas por vendedor
+
+Para reportes más detallados, usá los filtros de las tablas. Los filtros disponibles en Ventas incluyen:
+- **Rango de fechas** (con indicadores activos)
+- Estado de la venta
+- Condición de pago (Contado / Crédito)
+- Tipo de documento (Ticket / Factura)
+- Cliente / Vendedor
+
+> **Exportar a Excel:** Función en desarrollo. Por ahora, usá los filtros y copiá la tabla, o accedé directamente a la base de datos SQLite.

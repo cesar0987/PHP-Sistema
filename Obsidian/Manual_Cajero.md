@@ -1,101 +1,206 @@
-# Manual del Cajero (Vendedor)
+# Manual del Cajero / Vendedor
+
+> **Rol:** `vendedor`
+> **Acceso a:** Ventas, Caja, Clientes, Productos (solo lectura)
+> **Última actualización:** 26/03/2026
+
+---
 
 ## Índice
-1. [Introducción](#introducción)
-2. [Acceso al Sistema](#acceso-al-sistema)
-3. [Gestión de Caja](#gestión-de-caja)
-   - Apertura de Caja
-   - Cierre de Caja
-4. [Módulo de Ventas](#módulo-de-ventas)
-   - Búsqueda de Productos
-   - Nueva Venta (Al Contado)
-   - Nueva Venta (A Crédito)
-   - Impresión de Comprobantes
-5. [Módulo de Clientes](#módulo-de-clientes)
-6. [Consultas Adicionales](#consultas-adicionales)
-   - Consulta de Stock
+1. [Acceso al Sistema](#1-acceso-al-sistema)
+2. [Gestión de Caja](#2-gestión-de-caja)
+3. [Módulo de Ventas](#3-módulo-de-ventas)
+   - [Tabs y cómo navegar](#31-tabs-del-listado-de-ventas)
+   - [Nueva venta al contado](#32-nueva-venta-al-contado)
+   - [Nueva venta a crédito](#33-nueva-venta-a-crédito)
+   - [Nota de Pedido / Presupuesto](#34-nota-de-pedido--presupuesto)
+   - [Escanear producto con lector](#35-escanear-producto-con-lector-de-código-de-barras)
+   - [Imprimir comprobante](#36-imprimir-comprobante)
+   - [Anular una venta](#37-anular-una-venta)
+4. [Módulo de Clientes](#4-módulo-de-clientes)
+5. [Consulta de Stock](#5-consulta-de-stock)
+6. [Errores frecuentes](#6-errores-frecuentes)
 
 ---
 
-## Introducción
-Este manual describe paso a paso las operaciones diarias que un empleado con el rol **Vendedor** o **Cajero** debe realizar en el Sistema POS Terracota. Tu función principal incluye la atención al cliente, el registro de ventas, el manejo de la caja registradora asignada y la consulta rápida de inventario.
+## 1. Acceso al Sistema
+
+1. Abrí el navegador e ingresá a la URL del sistema (Ej: `http://localhost:8000/admin`).
+2. Ingresá tu **correo electrónico** y **contraseña**.
+3. Hacé clic en **Iniciar Sesión**.
+
+> **Nota:** El sistema muestra automáticamente solo los datos de tu sucursal asignada. No vas a ver ventas ni stock de otras sucursales.
+
+**¿Olvidaste la contraseña?** Contactá al Administrador para que la resetee desde el panel de Usuarios.
 
 ---
 
-## Acceso al Sistema
-1. Ingresa a la URL del sistema desde tu navegador.
-2. Introduce tu **Correo electrónico** y **Contraseña**.
-3. Haz clic en **Iniciar Sesión**.
-> *Nota: Al ingresar, el sistema pre-filtrará toda la información (ventas, cajas, inventario) para mostrar únicamente los datos correspondientes a tu sucursal asignada.*
+## 2. Gestión de Caja
+
+**⚠️ Importante:** No podés crear ventas si no tenés una caja abierta. El botón "Nueva Venta" aparece deshabilitado hasta que abras tu caja del día.
+
+### 2.1 Abrir la caja
+
+1. En el menú izquierdo, hacé clic en **Ventas → Cajas**.
+2. Hacé clic en **Nueva Caja**.
+3. Completá:
+   - **Nombre**: ej. "Caja Principal Turno Mañana"
+   - **Sucursal**: ya viene precargada con la tuya
+   - **Monto de Apertura**: el efectivo con el que arrancás el turno (ej. 50.000 Gs)
+4. Hacé clic en **Crear**.
+
+La caja queda en estado **Abierta** y todas las ventas en efectivo se suman automáticamente.
+
+### 2.2 Cerrar la caja
+
+Al finalizar el turno:
+
+1. Andá a **Ventas → Cajas** y buscá tu caja abierta.
+2. Hacé clic en **Editar**.
+3. Ingresá el **Monto de Cierre** (conteo físico del efectivo).
+4. El sistema calcula automáticamente la diferencia con las ventas registradas.
+5. Si hay diferencia importante (> 10%), aparece una advertencia. Anotá el motivo en **Notas**.
+6. Hacé clic en **Guardar**.
 
 ---
 
-## Gestión de Caja
+## 3. Módulo de Ventas
 
-Antes de comenzar a facturar o registrar ventas, debes asegurar la apertura de tu caja.
+### 3.1 Tabs del listado de Ventas
 
-### Apertura de Caja
-1. En el menú lateral izquierdo, ve a **Cajas / Cash Registers**.
-2. Dale clic a **New Cash register** (Nueva Caja).
-3. Selecciona la sucursal actual y tu usuario (normalmente pre-cargado).
-4. Ingresa el **Opening Balance** (Monto de Apertura) con el efectivo base con el que inicias el turno.
-5. Haz clic en **Create**.
-> *A partir de este momento, todas las ventas en efectivo se sumarán automáticamente al saldo actual de esta caja.*
+Cuando entrás a **Ventas**, el listado tiene cuatro pestañas (tabs):
 
-### Cierre de Caja
-Al finalizar tu turno:
-1. Ve al listado de **Cajas**, selecciona tu caja abierta y haz clic en **Edit**.
-2. Ingresa la fecha/hora actual en **Closed At**.
-3. Ingresa el conteo físico final en **Closing Balance** (Monto de Cierre).
-4. Si hay una diferencia entre el efectivo esperado y el físico, escríbelo en **Notes** (Observaciones).
-5. Haz clic en **Save changes**.
+| Tab | Qué muestra |
+|-----|-------------|
+| **Todas** | Todas las ventas sin filtro |
+| **Notas de Pedido / Presupuestos** | Ventas en estado *Pendiente* (presupuestos no cobrados aún). Tiene un número en naranja indicando cuántas hay. |
+| **Completadas** | Ventas ya cobradas |
+| **Créditos Activos** | Ventas a crédito con saldo pendiente de cobro |
+
+Usá la pestaña **Notas de Pedido / Presupuestos** para encontrar rápidamente los presupuestos que emitiste y convertirlos en venta real.
+
+### 3.2 Nueva venta al contado
+
+1. Hacé clic en **Nueva Venta** (si está deshabilitado, abrí tu caja primero).
+2. Completá el encabezado:
+   - **Cliente**: buscá por nombre o documento. Si es consumidor final, dejalo en blanco.
+   - **Estado**: `Completado`
+   - **Método de Pago**: `Contado`
+   - **Tipo de Documento**: `Ticket` (para comprobante interno) o `Factura` (cuando el cliente pide factura legal SIFEN).
+3. En la sección **Productos**:
+   - Buscá el producto por nombre o SKU en el selector.
+   - Modificá la **Cantidad** si llevá más de uno.
+   - El **Precio unit.** y **Subtotal** se calculan solos.
+   - Podés agregar descuento individual por ítem en el campo **Desc.**
+4. En **Totales** vas a ver:
+   - Subtotal desglosado por tasa de IVA (Exenta / 5% / 10%)
+   - Campo **Descuento Gral.**: descuento sobre el total
+   - Panel grande azul con el **TOTAL A COBRAR** en Guaraníes
+5. Hacé clic en **Crear**.
+
+> **Precios y IVA:** Los precios del sistema incluyen IVA (sistema paraguayo). Lo que se muestra en pantalla es el precio final al cliente. Las cifras de IVA son para el desglose contable.
+
+### 3.3 Nueva venta a crédito
+
+1. Seguí los mismos pasos que una venta al contado.
+2. En **Método de Pago**, elegí **Crédito**.
+3. Aparece automáticamente el campo **Vencimiento del crédito** con fecha sugerida en 30 días. Podés cambiarla según el acuerdo con el cliente.
+4. Hacé clic en **Crear**.
+
+La venta queda registrada. El saldo aparece en la cuenta del cliente y en el **Calendario de Créditos** (accesible para supervisores y cobradores).
+
+> **Atención:** Las ventas a crédito **no entran a caja**. El monto queda como saldo pendiente del cliente hasta que el cobrador registre el pago.
+
+### 3.4 Nota de Pedido / Presupuesto
+
+Un presupuesto es una venta en estado **Pendiente**. No descuenta stock ni afecta caja.
+
+**Para crear un presupuesto:**
+
+1. Seguí el proceso normal de venta.
+2. En el campo **Estado**, elegí **Nota de Pedido**.
+3. Hacé clic en **Crear**.
+
+**Para imprimir el presupuesto:**
+
+Desde el listado de ventas, en la tab **Notas de Pedido**, buscá la venta y usá el botón **Presupuesto** (ícono de documento con moneda).
+
+**Para convertirlo en venta real:**
+
+Desde el listado, hacé clic en **Aprobar a Venta**. Se abre un modal para registrar el pago recibido (efectivo, tarjeta, transferencia, QR). Una vez confirmado, el stock se descuenta y la venta queda completada.
+
+O si el cliente paga todo en efectivo al instante, usá **Cobro Rápido (Efectivo)** — aprueba y cobra en un solo clic.
+
+### 3.5 Escanear producto con lector de código de barras
+
+En el formulario de venta, la sección **Productos** tiene el botón **Escanear producto** (ícono QR).
+
+1. Hacé clic en **Escanear producto**.
+2. Apuntá el lector al código de barras del producto (o escribí el SKU manualmente).
+3. El sistema busca el producto y lo agrega a la lista. Si ya estaba en la lista, incrementa la cantidad en 1.
+
+### 3.6 Imprimir comprobante
+
+Solo disponible para ventas **Completadas**.
+
+1. En el listado de ventas, buscá la venta.
+2. Hacé clic en **Imprimir Ticket/Factura** (ícono de impresora azul).
+3. Se descarga un PDF:
+   - **Ticket**: formato 80mm para impresora térmica, con desglose de IVA y código QR.
+   - **Factura**: formato A4, con datos del timbrado, CDC y datos del cliente.
+4. Imprimí desde el PDF.
+
+### 3.7 Anular una venta
+
+Solo para ventas **Completadas**. El botón aparece como una **X roja** (`Anular`).
+
+1. Hacé clic en **Anular**.
+2. Seleccioná el **Motivo** (Error en precio, Producto equivocado, Devolución del cliente, etc.).
+3. Podés agregar un detalle en **Detalle adicional**.
+4. Hacé clic en **Sí, anular venta**.
+
+El stock se devuelve automáticamente al almacén.
+
+> **Nota:** Si no tenés permisos para anular, contactá a tu Supervisor.
 
 ---
 
-## Módulo de Ventas
+## 4. Módulo de Clientes
 
-El proceso central del sistema. Aquí puedes cobrar productos a los clientes.
+1. Andá a **Clientes** en el menú.
+2. Buscá por nombre, RUC o CI con la barra de búsqueda.
+3. Hacé clic en el cliente para ver:
+   - **Saldo actual** (deuda vigente)
+   - **Límite de crédito**
+   - Historial de ventas y pagos
 
-### Nueva Venta (Al Contado)
-1. En el menú lateral, ve a **Ventas / Sales**.
-2. Haz clic en **New Sale**.
-3. Busca al **Cliente** (puedes buscar por documento o nombre). Si no existe, puedes crearlo directamente desde el símbolo `+`.
-4. El tipo de comprobante por defecto será **Factura** o **Ticket** (según corresponda). Selecciona **Condición Contado**.
-5. En la sección **Productos**, haz clic en **Add product**:
-   - Busca el producto por nombre o código de barras.
-   - El precio unitario se cargará por defecto.
-   - Modifica la cantidad si el cliente lleva más de uno.
-6. Revisa el **Total** al final de la pantalla y el monto cobrado.
-7. Haz clic en **Create**.
+**Crear un cliente nuevo:**
 
-### Nueva Venta (A Crédito)
-Si un cliente tiene línea de crédito aprobada:
-1. En el momento de la venta, al seleccionar al cliente, verifica que tenga crédito disponible.
-2. En las opciones de pago de la venta, selecciona **Método de Pago: Crédito**.
-3. Finaliza la venta. El saldo de la venta se sumará a la cuenta corriente del cliente y su monto disponible se ajustará en tiempo real. 
+Podés crearlo directamente desde el formulario de venta (el campo Cliente tiene un botón `+`), o desde el menú **Clientes → Nuevo Cliente**.
 
-### Impresión de Comprobantes
-1. Una vez creada la venta, en el listado de ventas (`/admin/sales`), busca la venta deseada.
-2. Haz clic en el botón de la impresora o la opción "Imprimir Reporte".
-3. Se generará un PDF en Formato Ticket de 80mm que podrás imprimir directamente en la impresora térmica.
+Campos básicos: Nombre, RUC/CI, Teléfono, Email, Dirección.
 
 ---
 
-## Módulo de Clientes
-Puedes gestionar rápida y ágilmente la cartera de clientes de tu sucursal.
-1. Ve a **Clientes / Customers**.
-2. Usa el buscador en la parte superior derecha para buscar por **RUC/CI** o **Nombre**.
-3. Para ver el estado del cliente (Saldo Actual, Límite de Crédito), haz clic sobre su nombre y entra a la pestaña **Ver/View**. Allí verás si tiene `is_credit_enabled` y cuánto saldo posee.
-4. Puedes agregar un nuevo cliente con el botón **New Customer**.
+## 5. Consulta de Stock
+
+1. Andá a **Stock** o **Productos** en el menú.
+2. Los productos con stock bajo aparecen con un indicador de color:
+   - 🟢 Verde: stock normal
+   - 🟡 Amarillo: por debajo del mínimo
+   - 🔴 Rojo: sin stock
+3. Podés filtrar por categoría, nombre o código.
 
 ---
 
-## Consultas Adicionales
+## 6. Errores frecuentes
 
-### Consulta de Stock
-1. Ve a **Productos / Products** o a **Inventario / Stocks**.
-2. Puedes utilizar los filtros (icono de embudo) para buscar productos específicos.
-3. Al visualizar un producto, verás su cantidad total disponible en tu sucursal actual.
-4. *Opcional:* Si necesitas ver la ubicación exacta del producto (Pasillo, Estante, Nivel), ingresa al detalle del producto en la lista.
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| El botón "Nueva Venta" está deshabilitado | No tenés caja abierta | Abrir caja desde **Cajas** |
+| "Stock insuficiente en sucursal" al ingresar cantidad | El stock disponible es menor a lo solicitado | Reducir cantidad o consultar al almacenero |
+| La venta se crea pero no descuenta stock | La venta quedó en estado "Pendiente" | Verificar que el Estado sea "Completado" |
+| No aparece el botón "Imprimir Ticket/Factura" | La venta no está completada | Solo disponible en ventas completadas |
+| Pantalla en blanco o error 500 | Error del servidor | Contactar al Administrador |
 
-> **Soporte Técnico:** En caso de errores en facturación, pantalla en blanco o imposibilidad de cerrar caja, contacta con tu **Supervisor** o con el **Administrador del Sistema**.
+> **Soporte:** En caso de errores que no podés resolver, contactá a tu **Supervisor** o al **Administrador del Sistema**.

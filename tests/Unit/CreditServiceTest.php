@@ -105,7 +105,7 @@ class CreditServiceTest extends TestCase
 
     public function test_update_customer_balance_calculates_correctly(): void
     {
-        // Crear venta — total = 22000 (2×10000 + 10% IVA)
+        // Crear venta — Paraguay IVA incluido: total = 2×10000 = 20000
         $sale = app(SaleService::class)->createSale([
             'branch_id' => $this->branch->id,
             'warehouse_id' => $this->warehouse->id,
@@ -130,7 +130,7 @@ class CreditServiceTest extends TestCase
 
         $this->customer->refresh();
 
-        // Deuda = total venta (22000) - pago (5000) = 17000
-        $this->assertEquals(17000, $this->customer->current_balance);
+        // Paraguay: IVA incluido en precio. Total = 2×10000 = 20000. Pago = 5000. Deuda = 15000.
+        $this->assertEquals(15000, $this->customer->current_balance);
     }
 }

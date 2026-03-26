@@ -199,7 +199,7 @@ CDC = dTiDE(2) + dRucEm(8) + dDVEmi(1) + dEst(3) + dPunExp(3) + dNumDoc(7) + dSi
 4. [x] Migración `branches`: `establishment_code`, `dispatch_point`, `timbrado_number`, `timbrado_start_date`.
 5. [x] Pruebas unitarias del CDC (`tests/Unit/SifenCdcServiceTest.php` — 10 tests).
 6. [ ] Integración de la firma digital (`robrichards/xmlseclibs` con certificado .p12).
-7. [ ] Tests del `SifenXmlService` validando la estructura XML completa.
+7. [x] Tests del `SifenXmlService` validando la estructura XML completa (`tests/Unit/SifenXmlServiceTest.php` — 15 tests).
 
 ---
-*Nota: Este plan fue generado y aprobado el 25/03/2026. Actualizado con mapeo completo el 26/03/2026.*
+*Nota: Este plan fue generado y aprobado el 25/03/2026. Actualizado con mapeo completo el 26/03/2026. Tests SifenXmlService completados el 26/03/2026 (73/73 tests passing).*

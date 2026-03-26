@@ -95,6 +95,15 @@ class SaleResource extends Resource
                                     ])
                                     ->default('contado')
                                     ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, $state) {
+                                        if ($state === 'credito') {
+                                            // Fecha de vencimiento = hoy + 30 días (desde fecha de cobro, no de factura)
+                                            $set('credit_due_date', now()->addDays(30)->format('Y-m-d'));
+                                        } else {
+                                            $set('credit_due_date', null);
+                                        }
+                                    })
                                     ->helperText('Contado: afecta la caja elegida. Crédito: no entra a caja, va al saldo del cliente.'),
                                 Forms\Components\Select::make('document_type')
                                     ->label('Tipo de Documento')
@@ -114,6 +123,14 @@ class SaleResource extends Resource
                                         }
                                     })
                                     ->required(),
+                                Forms\Components\DatePicker::make('credit_due_date')
+                                    ->label('Vencimiento del crédito')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->minDate(now())
+                                    ->visible(fn (Get $get): bool => $get('payment_method') === 'credito')
+                                    ->required(fn (Get $get): bool => $get('payment_method') === 'credito')
+                                    ->helperText('Fecha límite para el cobro del crédito.'),
                             ]),
                         Forms\Components\Grid::make(4)
                             ->schema([
@@ -381,9 +398,7 @@ class SaleResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly(),
                             ]),
-                        Forms\Components\Grid::make([
-                            'default' => 5,
-                        ])
+                        Forms\Components\Grid::make(4)
                             ->schema([
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
@@ -412,13 +427,34 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->suffix('Gs')
                                     ->readOnly(),
-                                Forms\Components\TextInput::make('total')
-                                    ->label('TOTAL')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->suffix('Gs')
-                                    ->readOnly(),
                             ]),
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\Placeholder::make('total_display')
+                                    ->label('')
+                                    ->content(function (Get $get): \Illuminate\Support\HtmlString {
+                                        $total    = (float) ($get('total') ?? 0);
+                                        $discount = (float) ($get('discount') ?? 0);
+                                        $formatted = number_format($total, 0, ',', '.');
+
+                                        $discountHtml = $discount > 0
+                                            ? '<span class="text-sm text-amber-600 dark:text-amber-400 font-medium ml-3">(-' . number_format($discount, 0, ',', '.') . ' Gs de descuento)</span>'
+                                            : '';
+
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<div class="flex items-center justify-end gap-2 py-2 px-4 rounded-xl bg-primary-50 dark:bg-primary-950 border-2 border-primary-400 dark:border-primary-600">'
+                                            . '<div>'
+                                            . '<p class="text-xs font-semibold uppercase tracking-widest text-primary-500 dark:text-primary-400 text-right">Total a cobrar</p>'
+                                            . '<p class="text-4xl font-extrabold text-primary-700 dark:text-primary-300 text-right leading-tight">'
+                                            . $formatted . ' <span class="text-2xl">Gs</span>'
+                                            . $discountHtml
+                                            . '</p>'
+                                            . '</div>'
+                                            . '</div>'
+                                        );
+                                    }),
+                            ]),
+                        Forms\Components\Hidden::make('total'),
                         Forms\Components\Hidden::make('tax'),
                         Forms\Components\Textarea::make('notes')
                             ->label('Notas')
@@ -555,7 +591,17 @@ class SaleResource extends Resource
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label('Condición')
-                    ->formatStateUsing(fn ($state) => ucfirst((string) $state)),
+                    ->badge()
+                    ->color(fn ($state): string => match ($state) {
+                        'contado' => 'success',
+                        'credito' => 'warning',
+                        default   => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state): string => match ($state) {
+                        'contado' => 'Contado',
+                        'credito' => 'Crédito',
+                        default   => ucfirst((string) $state),
+                    }),
                 Tables\Columns\TextColumn::make('sale_date')
                     ->label('Fecha')
                     ->dateTime('d/m/Y H:i')
@@ -563,13 +609,51 @@ class SaleResource extends Resource
             ])
             ->defaultSort('sale_date', 'desc')
             ->filters([
+                Tables\Filters\Filter::make('fecha')
+                    ->label('Rango de fechas')
+                    ->form([
+                        Forms\Components\DatePicker::make('desde')
+                            ->label('Desde')
+                            ->default(now()->startOfMonth()),
+                        Forms\Components\DatePicker::make('hasta')
+                            ->label('Hasta')
+                            ->default(now()),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['desde'], fn ($q, $d) => $q->whereDate('sale_date', '>=', $d))
+                            ->when($data['hasta'], fn ($q, $d) => $q->whereDate('sale_date', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['desde'] ?? null) {
+                            $indicators[] = Tables\Filters\Indicator::make('Desde '.date('d/m/Y', strtotime($data['desde'])));
+                        }
+                        if ($data['hasta'] ?? null) {
+                            $indicators[] = Tables\Filters\Indicator::make('Hasta '.date('d/m/Y', strtotime($data['hasta'])));
+                        }
+
+                        return $indicators;
+                    }),
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Estado')
                     ->options([
-                        'pending' => 'Nota de Pedido',
+                        'pending'   => 'Nota de Pedido',
                         'completed' => 'Completado',
                         'cancelled' => 'Cancelado',
-                        'returned' => 'Devuelto',
+                        'returned'  => 'Devuelto',
+                    ]),
+                Tables\Filters\SelectFilter::make('payment_method')
+                    ->label('Condición de pago')
+                    ->options([
+                        'contado' => 'Contado',
+                        'credito' => 'Crédito',
+                    ]),
+                Tables\Filters\SelectFilter::make('document_type')
+                    ->label('Tipo de documento')
+                    ->options([
+                        'ticket'  => 'Ticket',
+                        'invoice' => 'Factura',
                     ]),
                 Tables\Filters\SelectFilter::make('customer_id')
                     ->label('Cliente')
@@ -582,6 +666,7 @@ class SaleResource extends Resource
                 Tables\Filters\TrashedFilter::make()
                     ->label('Eliminados'),
             ])
+            ->filtersFormColumns(3)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

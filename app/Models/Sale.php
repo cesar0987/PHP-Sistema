@@ -122,4 +122,9 @@ class Sale extends Model
     {
         return $this->hasMany(Receipt::class);
     }
+
+    public function creditPayments(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
 }

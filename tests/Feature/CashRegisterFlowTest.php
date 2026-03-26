@@ -139,9 +139,10 @@ class CashRegisterFlowTest extends TestCase
             ->where('status', 'completed')
             ->sum('total');
 
-        // Venta 1: 80000 + 10% IVA = 88000
-        // Venta 2: 160000 + 10% IVA = 176000
-        // Total = 264000
-        $this->assertEquals(264000, $totalVentas);
+        // Paraguay: prices include IVA.
+        // Venta 1: qty=1 * 80000 = 80000 (IVA incluido)
+        // Venta 2: qty=2 * 80000 = 160000 (IVA incluido)
+        // Total = 240000
+        $this->assertEquals(240000, $totalVentas);
     }
 }
