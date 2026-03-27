@@ -30,21 +30,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
-
-        Schema::create('receipts', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('sale_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['ticket', 'invoice', 'receipt']);
-            $table->string('number')->unique();
-            $table->timestamp('generated_at');
-            $table->text('file_path')->nullable();
-            $table->timestamps();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('receipts');
         Schema::dropIfExists('cash_movements');
         Schema::dropIfExists('cash_registers');
     }
