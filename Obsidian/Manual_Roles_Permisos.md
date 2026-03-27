@@ -1,6 +1,16 @@
 # Manual de Roles y Permisos — POS Terracota
 
-> **Última actualización:** 14/03/2026
+> **Última actualización:** 27/03/2026
+
+---
+
+## 🔐 Acceso al Panel Principal (`/admin`)
+
+> [!NOTE]
+> **Acceso Global Activo:** Por decisión de diseño, **todos los usuarios registrados en el sistema pueden iniciar sesión en el panel principal de Filament (`/admin`)**, independientemente de su rol.
+> 
+> Esta regla está definida en `app/Models/User.php` mediante la interfaz `FilamentUser` retornando `true` en `canAccessPanel()`. 
+> *Importante:* Entrar al panel no otorga permisos globales; una vez dentro, las vistas y acciones de cada usuario están estrictamente limitadas por los **Roles y Permisos** descritos a continuación.
 
 ---
 
