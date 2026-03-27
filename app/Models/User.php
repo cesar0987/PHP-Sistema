@@ -9,9 +9,19 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
 #[ScopedBy([BranchScope::class])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Por ahora, permitimos el acceso a cualquier usuario autenticado de Terracota.
+        // Si más adelante quieres restringirlo solo a administradores, lo puedes cambiar.
+        return true;
+    }
+
     use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     protected static $logFillable = true;
