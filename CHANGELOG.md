@@ -14,6 +14,37 @@ y este proyecto se adhiere temporalmente a Versionado Semántico.
 - **Nuevo Recurso de Lotes:** Interfaz en Filament para la visualización y gestión detallada de lotes de stock (`StockBatch`).
 - **Plan de Control de Vencimiento:** Documentación técnica y funcional del sistema de lotes en `Obsidian/Plan_Control_Vencimiento.md`.
 
+## [1.0.5] - 2026-03-27
+
+### Reparado (Fixed)
+- **Estabilidad de Migraciones:** Reordenamiento de timestamps en archivos de migración para asegurar la creación correcta de tablas con restricciones de llave foránea (`cash_registers`, `sales`).
+
+## [1.0.4] - 2026-03-26
+
+### Cambiado (Changed)
+- **Refactorización Clean Architecture:** Desacoplamiento de servicios (`ReceiptService`, `InventoryService`) del helper `auth()`, implementando inyección de dependencias para mayor testabilidad.
+- **Persistencia en Entidades:** Eliminación de lógica de base de datos dentro del modelo `ProductVariant`, moviéndola a la capa de servicios.
+
+## [1.0.3] - 2026-03-25
+
+### Añadido (Added)
+- **Facturación Electrónica SIFEN (Paraguay):** Generación de archivos XML bajo el estándar SIFEN v150.
+- **Seguridad Fiscal:** Implementación del algoritmo de generación de CDC (Código de Control) de 44 dígitos y URLs para códigos QR oficiales.
+
+## [1.0.2] - 2026-03-15
+
+### Añadido (Added)
+- **Abonos a Crédito en Caja:** Integración de cobranzas de cuentas por cobrar en el flujo de efectivo diario de la sucursal.
+
+### Reparado (Fixed)
+- **Cierre de Caja:** Corrección en el cálculo de totales esperados, filtrando ventas a crédito y devoluciones para reflejar el efectivo real.
+
+## [1.0.1] - 2026-03-14
+
+### Añadido (Added)
+- **Gestión de Créditos Personalizada:** Fecha de vencimiento obligatoria para ventas a crédito y visualización en calendario administrativo.
+- **Roles y Permisos:** Implementación del rol "Cobrador" y corrección en la sincronización de permisos mediante `syncRoles()`.
+
 ## [1.0.0] - 2026-03-14
 
 ### Añadido (Added)
