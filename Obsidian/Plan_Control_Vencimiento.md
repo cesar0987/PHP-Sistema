@@ -13,15 +13,19 @@ Por ello, implementamos una validación condicional `has_expiry` en el producto.
 ## 2. Hoja de Ruta (Roadmap)
 
 1. [x] Crear el plan maestro y flujo.
-2. [ ] Crear Migración para la tabla `stock_batches` y agregar columnas `has_expiry` en `products` y `expiry_date` en ingresos (`purchase_items`, `inventory_adjustment_items`).
-3. [ ] Crear modelo `StockBatch` y agregarlo en las relaciones.
-4. [ ] Refactorizar la lógica del servicio `InventoryService`:
-    - `addStock()` / `addPurchaseStock()`: Agrupar stock en lotes con `expiry_date`.
-    - `removeStock()`: Aplicar descuento jerárquico FIFO a los lotes.
-5. [ ] Actualizar UI de Filament:
-    - Productos: Toggle de `has_expiry`.
-    - Compras y Ajustes: Mostrar selector de fecha condicionado a `$get`.
-6. [ ] Crear interfaz/widget "Próximos Vencimientos" visualizando sobre `stock_batches`.
+2. [x] Crear Migración para la tabla `stock_batches` y agregar columnas `has_expiry` en `products` y `expiry_date` en ingresos.
+3. [x] Crear modelo `StockBatch` y agregarlo en las relaciones.
+4. [x] Refactorizar la lógica del servicio `InventoryService` (Lógica FIFO de entrada/salida/ajuste/transferencia).
+5. [x] Actualizar UI de Filament (Toggle `has_expiry` y campos condicionales de fecha).
+6. [x] Crear interfaz de gestión de "Lotes de Stock" (`StockBatchResource`).
+
+## 3. Lógica Técnica Aplicada (FIFO)
+
+La descarga de stock se realiza de forma jerárquica en `InventoryService::removeStock()`:
+1. Se buscan lotes con `quantity > 0` para la variante y almacén específico.
+2. Se ordenan por `expiry_date ASC` (fechas más próximas primero).
+3. Los lotes sin fecha (`null`) se procesan al final para priorizar los productos perecederos conocidos.
+4. Se utiliza `lockForUpdate()` para prevenir colisiones de stock durante transacciones concurrentes.
 
 ---
 **Documento generado por Antigravity AI**

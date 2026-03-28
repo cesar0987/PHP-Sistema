@@ -5,16 +5,27 @@ Todos los cambios notables del proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere temporalmente a Versionado Semántico.
 
+## [1.2.0] - 2026-03-28
+
+### Añadido (Added)
+- **Sistema de Backups Integrado:** Gestión de copias de seguridad de base de datos (PostgreSQL/SQLite) y archivos desde el panel administrativo.
+- **Ajustes Generales Dinámicos:** Nueva interfaz para configurar el nombre del sistema y la automatización de backups.
+- **Programación Flexible:** Capacidad de definir la frecuencia de respaldos (Horaria, Diaria, etc.) desde la UI.
+
+### Reparado (Fixed)
+- **Error Crítico de Booteo:** Se corrigió el fallo `Undefined table settings` que impedía ejecutar migraciones o comandos de consola en entornos nuevos.
+- **Error 500 en Compras:** Solucionado el problema al seleccionar productos en el módulo de compras causado por una clonación de datos errónea.
+
 ## [1.1.0] - 2026-03-28
 
 ### Añadido (Added)
-- **Control de Vencimientos y Lotes (FIFO):** Implementación integral de gestión de stock por lotes con fechas de vencimiento.
-- **Lógica de Descuento de Stock:** Sistema automatizado que descuenta stock del lote con vencimiento más próximo (FIFO) en ventas y transferencias.
-- **Gestión de Compras y Ajustes:** Integración de campos de fecha de vencimiento en los procesos de compra, ajustes de inventario y transferencias entre sucursales.
-- **Nuevo Recurso de Lotes:** Interfaz en Filament para la visualización y gestión detallada de lotes de stock (`StockBatch`).
-- **Plan de Control de Vencimiento:** Documentación técnica y funcional del sistema de lotes en `Obsidian/Plan_Control_Vencimiento.md`.
+- **Control de Vencimientos y Lotes (FIFO):** Implementación integral de gestión de stock por lotes con fechas de vencimiento obligatorias para productos perecederos.
+- **Lógica de Descuento de Stock:** Sistema automatizado que garantiza la salida del lote con vencimiento más próximo (FIFO) en ventas, transferencias y ajustes.
+- **Nuevo Recurso de Lotes:** Interfaz detallada para auditar y gestionar manualmente lotes de stock por sucursal.
+- **Documentación Técnica:** Plan maestro de control de vencimiento en `Obsidian/Plan_Control_Vencimiento.md`.
 
 ## [1.0.5] - 2026-03-27
+
 
 ### Reparado (Fixed)
 - **Estabilidad de Migraciones:** Reordenamiento de timestamps en archivos de migración para asegurar la creación correcta de tablas con restricciones de llave foránea (`cash_registers`, `sales`).

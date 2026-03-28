@@ -18,25 +18,20 @@
 - **Ventas a Crédito:** Gestión de clientes con límites de crédito autorizados y calendario de vencimiento de cuotas (Credit Due Dates).
 - Generación y guardado histórico completo de Notas de Pedido (Budgets).
 
-### 📦 Gestión de Inventario Multi-Sucursal
-- Organización por **Empresas > Sucursales > Almacenes**.
-- Sistema de **Ubicaciones Dinámicas** detalladas (Pasillo, Estante, Fila, Posición) para optimizar la logística.
-- Historial estricto de **Movimientos de Stock** (no se permiten modificaciones crudas en la base de datos).
-- Compras a proveedores, Recepciones Parciales o Totales y Transferencias entre almacenes.
-- Lógica de importación/ajuste masivo en formato CSV manejada por servicios dedicados (StockImportService).
+### 📦 Gestión de Inventario Multi-Sucursal y Lotes (FIFO)
+- Organización por **Empresas > Sucursales > Almacenes** con ubicaciones dinámicas.
+- **Control de Vencimiento (FIFO):** Gestión de mercadería perecedera mediante **Lotes de Stock (`StockBatch`)**.
+- Descuento inteligente: El sistema prioriza automáticamente la salida de productos con fecha de vencimiento más próxima.
+- Compras a proveedores, Recepciones Parciales y Transferencias con trazabilidad total de lotes.
 
 ### 🇵🇾 Facturación Electrónica Paraguaya (SIFEN v150)
-- Soporte para emisión de recibos y facturas en tiempo real con las nuevas normativas de la SET / DNIT.
-- Servicio integrado de generación de **CDC (Código de Control de 44 dígitos)** con cálculo nativo de dígito verificador.
-- Generación automática de códigos QR codificados en SVE para escaneo del consumidor.
-- Control de Documentos: Tickets 80mm y Formatos PDF empresariales estándar (A4/Carta). Generación motorizada por `DomPDF`.
+- Soporte para emisión de recibos y facturas legales con integración nativa SIFEN.
+- Generación de **CDC (Código de Control)** y códigos QR oficiales para cumplimiento tributario.
 
-### 🔐 Seguridad y Roles de Usuario
-El sistema viene precargado con protección basada en el paquete Spatie Permissions con 4 niveles primarios:
-- **Administrador:** Control total, configuración de la compañía, auditorías.
-- **Supervisor:** Gestionar permisos de sucursal, anulaciones/devoluciones de pedidos, calendario de cuentas por cobrar.
-- **Cajero:** Operativa de punto de venta (abrir caja, cobrar, registrar clientes, ver solo sus propias ventas).
-- **Cobrador:** Acceso a cuentas de clientes y rutas de cobro, gestión de abonos a crédito.
+### 🛡️ Seguridad y Mantenimiento
+- **Backups desde la Interfaz:** Copias de seguridad de la base de datos y archivos directamente desde el panel.
+- **Configuración Dinámica:** Ajuste de parámetros del sistema y frecuencias de backup desde el módulo de Ajustes Generales.
+- **Auditoría:** Registro de transacciones con `Spatie Activitylog` y permisos por roles.
 
 ---
 

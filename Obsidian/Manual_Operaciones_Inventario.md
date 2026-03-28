@@ -26,9 +26,13 @@ El Punto de Venta (POS) está diseñado para operar con rapidez, sin perder cont
 **El sistema está diseñado bajo Arquitectura Limpia.** Esto significa que **el stock JAMÁS se edita a mano** (por ejemplo, cambiando directamente un simple número). Toda modificación de inventario debe dejar un rastro contable.
 
 ### ¿Cómo ingresa/sale la mercadería del sistema?
-1. **Compras a Proveedores:** Al registrar una Compra, el stock aumenta automáticamente basándose en los productos comprados. Además, ahora estas compras se rigen por normativa SIFEN (requiriendo timbrados) y emiten su propio "Comprobante de Recepción" impreso en formato ticket.
-2. **Ventas:** El stock de los productos se descuenta al instante en la sucursal asignada cuando se completa una Venta.
-3. **Ajustes de Inventario:** Utilizados para ingresar stock inicial, pérdidas o roturas. El ajuste genera un movimiento de auditoría reflejando qué cambió y quién lo aprobó.
+1. **Compras a Proveedores:** Al registrar una Compra, el stock aumenta automáticamente. Si el producto tiene habilitado el **"Control de Vencimiento"**, se debe especificar la fecha de expiración, lo que creará un nuevo **Lote de Stock**.
+2. **Ventas:** El stock se descuenta al instante. Para productos con vencimiento, el sistema aplica una **Lógica FIFO (First-In, First-Out)**, descontando automáticamente del lote que vence más pronto para evitar mermas.
+3. **Ajustes de Inventario:** Permiten corregir el stock manualmentepara ingresos iniciales o roturas. En productos perecederos, el ajuste requiere identificar el lote (fecha de vencimiento) afectado.
+4. **Transferencias:** Al mover mercadería entre sucursales, el sistema traslada también la información de los lotes y sus fechas de vencimiento de origen a destino.
+
+### Control de Lotes (Stock Batches)
+Para una trazabilidad total, el recurso **"Lotes de Stock"** permite auditar cuánta mercadería queda de cada partida específica, su fecha de vencimiento y en qué almacén se encuentra físicamente.
 
 ### Fiscalización: Tomas Físicas (Conteo de Inventario)
 Para el control periódico del almacén, contamos con los **Inventarios Físicos**:
