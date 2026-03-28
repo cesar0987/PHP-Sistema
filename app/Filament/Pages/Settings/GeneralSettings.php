@@ -2,9 +2,14 @@
 
 namespace App\Filament\Pages\Settings;
 
-use Filament\Pages\Page;
+use App\Settings\GeneralSettings as Settings;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Pages\SettingsPage;
 
-class GeneralSettings extends Page
+class GeneralSettings extends SettingsPage
 {
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
@@ -16,10 +21,42 @@ class GeneralSettings extends Page
 
     protected static ?int $navigationSort = 110;
 
-    protected static string $view = 'filament.pages.settings.general-settings';
-    
+    protected static string $settings = Settings::class;
+
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Section::make('General')
+                    ->schema([
+                        TextInput::make('site_name')
+                            ->label('Nombre del Sistema')
+                            ->required(),
+                    ]),
+                Section::make('Configuración de Backups')
+                    ->schema([
+                        Select::make('backup_frequency')
+                            ->label('Frecuencia de Backup')
+                            ->options([
+                                'daily' => 'Diario',
+                                'twice_daily' => 'Cada 12 horas',
+                                'six_hours' => 'Cada 6 horas',
+                                'hourly' => 'Cada hora',
+                            ])
+                            ->required()
+                            ->native(false),
+                        TextInput::make('backup_time')
+                            ->label('Hora del Backup Diario')
+                            ->placeholder('02:00')
+                            ->visible(fn ($get) => $get('backup_frequency') === 'daily')
+                            ->required(fn ($get) => $get('backup_frequency') === 'daily'),
+                    ])->columns(2),
+            ]);
+    }
+
     public static function canAccess(): bool
     {
         return auth()->user()?->hasRole(['super_admin', 'admin']) ?? false;
     }
 }
+

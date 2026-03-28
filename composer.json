@@ -10,13 +10,15 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^6.0",
         "filament/filament": "^3.2",
+        "filament/spatie-laravel-settings-plugin": "^3.3",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.0",
         "shuvroroy/filament-spatie-laravel-backup": "^2.2",
         "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-backup": "^9.4",
-        "spatie/laravel-permission": "^7.2"
+        "spatie/laravel-permission": "^7.2",
+        "spatie/laravel-settings": "^3.7"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
