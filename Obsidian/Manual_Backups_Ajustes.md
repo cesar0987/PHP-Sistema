@@ -9,7 +9,11 @@ El panel de **Ajustes Generales** (ubicado en el menú **Administración**) perm
 ### Parámetros Disponibles:
 - **Nombre del Sistema:** Cambia el título que se muestra en la pestaña del navegador y en la marca del panel.
 - **Frecuencia de Backup:** Define cada cuánto tiempo el sistema intentará realizar un respaldo automático (Diario, Cada 12h, Cada 6h, Horario).
-- **Hora del Backup Diario:** Si la frecuencia es "Diario", aquí defines a qué hora se dispara el proceso (ej. `03:00` para la madrugada).
+- **Hora del Backup Diario:** Si la frecuencia es "Diario", aquí defines a qué hora se dispara (ej. `03:00`).
+- **Disco de Almacenamiento:** Permite elegir dónde se guardan físicamente los archivos:
+    - **Privado (Local):** Carpeta interna del servidor (`storage/app/private/backups`). Es la opción recomendada por seguridad.
+    - **Público (Local):** Carpeta accesible vía web (`storage/app/public/backups`).
+    - **Amazon S3:** Si se cuenta con una cuenta de AWS, para respaldos en la nube.
 
 ---
 

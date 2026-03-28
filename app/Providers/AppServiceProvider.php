@@ -28,6 +28,24 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureFilamentExceptionHandling();
         $this->configureAuthListeners();
+        $this->configureBackupDisk();
+    }
+
+    /**
+     * Inyecta el disco de backup configurado en los ajustes generales
+     * en la configuración global de Spatie Backup.
+     */
+    protected function configureBackupDisk(): void
+    {
+        try {
+            // Solo intentamos cargar si no estamos en medio de una migración
+            if (!app()->runningInConsole() || !str_contains(implode(' ', $_SERVER['argv'] ?? []), 'migrate')) {
+                $settings = app(\App\Settings\GeneralSettings::class);
+                config(['backup.backup.destination.disks' => [$settings->backup_disk]]);
+            }
+        } catch (\Exception $e) {
+            // Fallback silencioso si la tabla no existe
+        }
     }
 
     /**

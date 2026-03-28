@@ -45,12 +45,22 @@ class GeneralSettings extends SettingsPage
                             ])
                             ->required()
                             ->native(false),
+                        Select::make('backup_disk')
+                            ->label('Disco de Almacenamiento')
+                            ->options([
+                                'local' => 'Privado (Local)',
+                                'public' => 'Público (Local)',
+                                's3' => 'Amazon S3 (Cloud)',
+                            ])
+                            ->required()
+                            ->native(false)
+                            ->hint('Por defecto: local (storage/app/private/backups)'),
                         TextInput::make('backup_time')
                             ->label('Hora del Backup Diario')
                             ->placeholder('02:00')
                             ->visible(fn ($get) => $get('backup_frequency') === 'daily')
                             ->required(fn ($get) => $get('backup_frequency') === 'daily'),
-                    ])->columns(2),
+                    ])->columns(3),
             ]);
     }
 
