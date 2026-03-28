@@ -151,7 +151,7 @@ class PurchaseResource extends Resource
                                                 $qty = $get('quantity') ?: 1;
                                                 $set('subtotal', (float) $cost * (int) $qty);
                                                 $set('tax_percentage', $variant->product->tax_percentage ?? 10);
-                                                $set('has_expiry', clone $variant->product->has_expiry); // To trigger visibility
+                                                $set('has_expiry', $variant->product->has_expiry); // To trigger visibility
                                             }
                                         }
                                     })
