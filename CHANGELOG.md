@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere temporalmente a Versionado Semántico.
 
+## [1.1.0] - 2026-03-28
+
+### Añadido (Added)
+- **Control de Vencimientos y Lotes (FIFO):** Implementación integral de gestión de stock por lotes con fechas de vencimiento.
+- **Lógica de Descuento de Stock:** Sistema automatizado que descuenta stock del lote con vencimiento más próximo (FIFO) en ventas y transferencias.
+- **Gestión de Compras y Ajustes:** Integración de campos de fecha de vencimiento en los procesos de compra, ajustes de inventario y transferencias entre sucursales.
+- **Nuevo Recurso de Lotes:** Interfaz en Filament para la visualización y gestión detallada de lotes de stock (`StockBatch`).
+- **Plan de Control de Vencimiento:** Documentación técnica y funcional del sistema de lotes en `Obsidian/Plan_Control_Vencimiento.md`.
+
 ## [1.0.0] - 2026-03-14
 
 ### Añadido (Added)
