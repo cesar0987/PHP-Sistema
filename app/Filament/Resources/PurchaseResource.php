@@ -151,6 +151,7 @@ class PurchaseResource extends Resource
                                                 $qty = $get('quantity') ?: 1;
                                                 $set('subtotal', (float) $cost * (int) $qty);
                                                 $set('tax_percentage', $variant->product->tax_percentage ?? 10);
+                                                $set('has_expiry', clone $variant->product->has_expiry); // To trigger visibility
                                             }
                                         }
                                     })
@@ -188,10 +189,28 @@ class PurchaseResource extends Resource
                                     ->suffix('Gs')
                                     ->readOnly()
                                     ->columnSpan(2),
+                                Forms\Components\DatePicker::make('expiry_date')
+                                    ->label('Vencimiento')
+                                    ->visible(function (Get $get) {
+                                        if ($get('product_variant_id')) {
+                                            $variant = ProductVariant::with('product')->find($get('product_variant_id'));
+                                            return $variant && $variant->product->has_expiry;
+                                        }
+                                        return false;
+                                    })
+                                    ->required(function (Get $get) {
+                                        if ($get('product_variant_id')) {
+                                            $variant = ProductVariant::with('product')->find($get('product_variant_id'));
+                                            return $variant && $variant->product->has_expiry;
+                                        }
+                                        return false;                                        
+                                    })
+                                    ->columnSpan(2),
                                 Forms\Components\Hidden::make('tax_percentage')
                                     ->default(10),
+                                Forms\Components\Hidden::make('has_expiry'),
                             ])
-                            ->columns(11)
+                            ->columns(13)
                             ->addActionLabel('Agregar producto')
                             ->reorderable(false)
                             ->defaultItems(1)

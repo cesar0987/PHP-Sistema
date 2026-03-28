@@ -97,6 +97,10 @@ class ProductResource extends Resource
                 Forms\Components\Toggle::make('active')
                     ->label('Activo')
                     ->default(true),
+                Forms\Components\Toggle::make('has_expiry')
+                    ->label('Controla Vencimiento (Lotes)')
+                    ->helperText('Activar si el producto debe registrar fechas de vencimiento al ingresar stock.')
+                    ->default(false),
             ]);
     }
 

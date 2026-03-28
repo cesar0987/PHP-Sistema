@@ -48,6 +48,11 @@ class ProductVariant extends Model
         return $this->hasMany(Stock::class);
     }
 
+    public function stockBatches(): HasMany
+    {
+        return $this->hasMany(StockBatch::class);
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

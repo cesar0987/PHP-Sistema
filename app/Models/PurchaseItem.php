@@ -15,6 +15,7 @@ class PurchaseItem extends Model
         'tax_percentage',
         'tax_amount',
         'subtotal',
+        'expiry_date',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class PurchaseItem extends Model
         return [
             'cost' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'expiry_date' => 'date',
         ];
     }
 

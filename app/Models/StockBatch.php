@@ -5,13 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class InventoryAdjustmentItem extends Model
+class StockBatch extends Model
 {
     protected $fillable = [
-        'adjustment_id',
         'product_variant_id',
-        'quantity_before',
-        'quantity_after',
+        'warehouse_id',
+        'quantity',
         'expiry_date',
     ];
 
@@ -22,13 +21,13 @@ class InventoryAdjustmentItem extends Model
         ];
     }
 
-    public function adjustment(): BelongsTo
-    {
-        return $this->belongsTo(InventoryAdjustment::class, 'adjustment_id');
-    }
-
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

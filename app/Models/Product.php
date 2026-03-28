@@ -27,6 +27,7 @@ class Product extends Model
         'tax_percentage',
         'min_stock',
         'active',
+        'has_expiry',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -45,6 +46,7 @@ class Product extends Model
             'sale_price' => 'decimal:2',
             'tax_percentage' => 'decimal:2',
             'active' => 'boolean',
+            'has_expiry' => 'boolean',
         ];
     }
 

@@ -35,6 +35,18 @@ class InventoryService
             $stock = $this->getOrCreateStock($productVariant, $warehouse);
             $stock->increment('quantity', $quantity);
 
+            if ($productVariant->product->has_expiry) {
+                $expiryDate = $data['expiry_date'] ?? null;
+                $batch = \App\Models\StockBatch::firstOrCreate([
+                    'product_variant_id' => $productVariant->id,
+                    'warehouse_id' => $warehouse->id,
+                    'expiry_date' => $expiryDate,
+                ], [
+                    'quantity' => 0,
+                ]);
+                $batch->increment('quantity', $quantity);
+            }
+
             return StockMovement::create([
                 'product_variant_id' => $productVariant->id,
                 'warehouse_id' => $warehouse->id,
@@ -66,6 +78,29 @@ class InventoryService
 
             if ($stock->quantity < $quantity) {
                 throw new \Exception("Stock insuficiente. Disponible: {$stock->quantity}");
+            }
+
+            if ($productVariant->product->has_expiry) {
+                $remainingToRemove = $quantity;
+                $batches = \App\Models\StockBatch::where('product_variant_id', $productVariant->id)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->where('quantity', '>', 0)
+                    // Nulls last (older batches with unknown dates go last or first? Actually we should probably use them first to get rid of them, but let's just order by expiry_date asc)
+                    ->orderByRaw('expiry_date IS NULL ASC, expiry_date ASC')
+                    ->lockForUpdate()
+                    ->get();
+                
+                foreach ($batches as $batch) {
+                    if ($remainingToRemove <= 0) break;
+
+                    if ($batch->quantity >= $remainingToRemove) {
+                        $batch->decrement('quantity', $remainingToRemove);
+                        $remainingToRemove = 0;
+                    } else {
+                        $remainingToRemove -= $batch->quantity;
+                        $batch->update(['quantity' => 0]);
+                    }
+                }
             }
 
             $stock->decrement('quantity', $quantity);
@@ -151,6 +186,39 @@ class InventoryService
                 $stock->update(['quantity' => $newQuantity]);
 
                 $difference = $newQuantity - $quantityBefore;
+                
+                if ($item->productVariant->product->has_expiry) {
+                    if ($difference > 0) {
+                        $batch = \App\Models\StockBatch::firstOrCreate([
+                            'product_variant_id' => $item->product_variant_id,
+                            'warehouse_id' => $adjustment->warehouse_id,
+                            'expiry_date' => $item->expiry_date,
+                        ], [
+                            'quantity' => 0,
+                        ]);
+                        $batch->increment('quantity', $difference);
+                    } elseif ($difference < 0) {
+                        $remainingToRemove = abs($difference);
+                        $batches = \App\Models\StockBatch::where('product_variant_id', $item->product_variant_id)
+                            ->where('warehouse_id', $adjustment->warehouse_id)
+                            ->where('quantity', '>', 0)
+                            ->orderByRaw('expiry_date IS NULL ASC, expiry_date ASC')
+                            ->lockForUpdate()
+                            ->get();
+                        
+                        foreach ($batches as $batch) {
+                            if ($remainingToRemove <= 0) break;
+                            if ($batch->quantity >= $remainingToRemove) {
+                                $batch->decrement('quantity', $remainingToRemove);
+                                $remainingToRemove = 0;
+                            } else {
+                                $remainingToRemove -= $batch->quantity;
+                                $batch->update(['quantity' => 0]);
+                            }
+                        }
+                    }
+                }
+
                 if ($difference !== 0) {
                     StockMovement::create([
                         'product_variant_id' => $item->product_variant_id,
@@ -186,6 +254,34 @@ class InventoryService
 
             if ($fromStock->quantity < $quantity) {
                 throw new \Exception("Stock insuficiente en origen. Disponible: {$fromStock->quantity}");
+            }
+
+            if ($productVariant->product->has_expiry) {
+                $remainingToTransfer = $quantity;
+                $batches = \App\Models\StockBatch::where('product_variant_id', $productVariant->id)
+                    ->where('warehouse_id', $fromWarehouse->id)
+                    ->where('quantity', '>', 0)
+                    ->orderByRaw('expiry_date IS NULL ASC, expiry_date ASC')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($batches as $batch) {
+                    if ($remainingToTransfer <= 0) break;
+                    
+                    $qtyToMove = min($batch->quantity, $remainingToTransfer);
+                    $batch->decrement('quantity', $qtyToMove);
+                    
+                    $toBatch = \App\Models\StockBatch::firstOrCreate([
+                        'product_variant_id' => $productVariant->id,
+                        'warehouse_id' => $toWarehouse->id,
+                        'expiry_date' => $batch->expiry_date,
+                    ], [
+                        'quantity' => 0,
+                    ]);
+                    $toBatch->increment('quantity', $qtyToMove);
+
+                    $remainingToTransfer -= $qtyToMove;
+                }
             }
 
             $fromStock->decrement('quantity', $quantity);

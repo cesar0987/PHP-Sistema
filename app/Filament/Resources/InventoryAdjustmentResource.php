@@ -86,8 +86,25 @@ class InventoryAdjustmentResource extends Resource
                                 ->label('Nuevo Stock (Real)')
                                 ->numeric()
                                 ->required(),
+                            Forms\Components\DatePicker::make('expiry_date')
+                                ->label('Vencimiento')
+                                ->visible(function (Get $get) {
+                                    if ($get('product_variant_id')) {
+                                        $variant = ProductVariant::with('product')->find($get('product_variant_id'));
+                                        return $variant && $variant->product->has_expiry;
+                                    }
+                                    return false;
+                                })
+                                // Required solo si está agregando más de lo que había, sino asume que no crea nuevo lote (pero de todas formas la fecha sirve como alias del lote para restar). En ajustes, mejor pedirla obligatoria si tiene vencimiento.
+                                ->required(function (Get $get) {
+                                    if ($get('product_variant_id')) {
+                                        $variant = ProductVariant::with('product')->find($get('product_variant_id'));
+                                        return $variant && $variant->product->has_expiry;
+                                    }
+                                    return false;
+                                })
                         ])
-                        ->columns(4)
+                        ->columns(5)
                         ->defaultItems(1)
                         ->required()
                         ->minItems(1),
