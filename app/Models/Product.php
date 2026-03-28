@@ -33,9 +33,10 @@ class Product extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'cost_price', 'sale_price', 'active', 'min_stock', 'barcode', 'sku'])
+            ->logFillable()
             ->logOnlyDirty()
             ->useLogName('producto')
+            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn (string $eventName) => "Producto '{$this->name}' fue {$eventName}");
     }
 

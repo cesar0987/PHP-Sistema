@@ -63,9 +63,10 @@ class Sale extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['total', 'status', 'discount', 'customer_id', 'cancellation_reason'])
+            ->logFillable()
             ->logOnlyDirty()
             ->useLogName('venta')
+            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn (string $eventName) => "Venta #{$this->id} fue {$eventName}");
     }
 

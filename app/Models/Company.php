@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Company extends Model
 {
+    use LogsActivity;
+
     protected $fillable = [
         'name',
         'ruc',
@@ -26,6 +30,16 @@ class Company extends Model
         'actividad_eco_code',
         'actividad_eco_desc',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->useLogName('empresa')
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn (string $eventName) => "Datos de la empresa '{$this->name}' fueron {$eventName}");
+    }
 
     protected function casts(): array
     {

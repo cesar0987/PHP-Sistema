@@ -43,9 +43,10 @@ class Purchase extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['total', 'status', 'discount', 'supplier_id', 'warehouse_id'])
+            ->logFillable()
             ->logOnlyDirty()
             ->useLogName('compra')
+            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn (string $eventName) => "Compra #{$this->id} fue {$eventName}");
     }
 
